@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Fitness Plan</title>
+<style>
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-card: rgba(255,255,255,0.05);
+  --bg-card-hover: rgba(255,255,255,0.08);
+  --border-card: rgba(255,255,255,0.08);
+  --text-primary: #f0f0f5;
+  --text-secondary: rgba(255,255,255,0.45);
+  --text-dim: rgba(255,255,255,0.25);
+  --accent-chest: #ef4444;
+  --accent-shoulder: #f59e0b;
+  --accent-legs: #10b981;
+  --accent-back: #6366f1;
+  --accent: var(--accent-chest);
+  --accent-glow: rgba(239,68,68,0.15);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tab-h: 60px;
+  --header-h: 100px;
+}
+
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box }
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 20px);
+}
+
+@keyframes fadeSlideIn {
+  from { opacity:0; transform:translateY(14px) }
+  to   { opacity:1; transform:translateY(0) }
+}
+@keyframes cardIn {
+  from { opacity:0; transform:scale(0.96) translateY(10px) }
+  to   { opacity:1; transform:scale(1) translateY(0) }
+}
+@keyframes pop {
+  0%   { transform:scale(1) }
+  40%  { transform:scale(1.35) }
+  100% { transform:scale(1) }
+}
+@keyframes fabIn {
+  from { transform:scale(0) rotate(-90deg) }
+  to   { transform:scale(1) rotate(0) }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0 }
+  to   { background-position: 200% 0 }
+}
+
+/* Header */
+.app-header {
+  position: sticky; top: 0; z-index: 50;
+  padding: 16px 20px 12px;
+  background: linear-gradient(to bottom, var(--bg-primary) 60%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.header-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.header-title {
+  font-size: 26px; font-weight: 700; letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent), var(--text-primary));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: all 0.4s;
+}
+.progress-text {
+  font-size: 13px; color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.progress-bar {
+  height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--accent);
+  width: 0%; transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1);
+  position: relative;
+}
+.progress-fill::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+/* Tab Panels */
+.tab-panels { padding: 4px 16px 16px; }
+.tab-panel { display:none; animation: fadeSlideIn 0.3s ease-out }
+.tab-panel.active { display:block }
+
+/* Exercise Cards */
+.exercise-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  animation: cardIn 0.35s ease-out backwards;
+  transition: background 0.2s, border-color 0.2s;
+}
+.exercise-card:active { background: var(--bg-card-hover) }
+.exercise-card.all-done {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+.card-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.card-name {
+  flex: 1; font-size: 16px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-weight {
+  font-size: 13px; font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-glow);
+  padding: 2px 8px; border-radius: 6px;
+  white-space: nowrap;
+}
+.btn-delete {
+  background: none; border: none; color: var(--text-dim);
+  font-size: 20px; cursor: pointer; padding: 0 4px;
+  transition: color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-delete:hover { color: #ef4444 }
+.card-info {
+  font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;
+}
+
+/* Set Circles */
+.set-row {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;
+}
+.set-circle {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: 13px; font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  position: relative;
+}
+.set-circle.done {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.card-footer {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-progress {
+  font-size: 12px; color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.card-pct {
+  font-size: 12px; font-weight: 600; color: var(--accent);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center; padding: 60px 20px;
+  color: var(--text-dim);
+}
+.empty-icon {
+  font-size: 48px; margin-bottom: 12px; opacity: 0.4;
+}
+.empty-state p { font-size: 14px; line-height: 1.6 }
+
+/* FAB */
+.fab {
+  position: fixed;
+  bottom: calc(var(--tab-h) + var(--safe-bottom) + 18px);
+  right: 20px;
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff; border: none;
+  font-size: 28px; font-weight: 300;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 24px var(--accent-glow);
+  cursor: pointer; z-index: 60;
+  transition: background 0.3s, box-shadow 0.3s, transform 0.15s;
+  animation: fabIn 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.2s backwards;
+  -webkit-tap-highlight-color: transparent;
+}
+.fab:active { transform: scale(0.9) }
+
+/* Bottom Tab Bar */
+.tab-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(var(--tab-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  display: flex;
+  background: rgba(10,10,15,0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid var(--border-card);
+  z-index: 100;
+}
+.tab-item {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 3px;
+  color: var(--text-dim);
+  background: none; border: none;
+  cursor: pointer;
+  transition: color 0.25s, transform 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  font-family: inherit;
+}
+.tab-item.active {
+  color: var(--accent);
+}
+.tab-item.active::after {
+  content: '';
+  position: absolute; top: -1px; left: 50%; transform: translateX(-50%);
+  width: 20px; height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+.tab-icon { width: 24px; height: 24px }
+.tab-label { font-size: 11px; font-weight: 500 }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 200;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+.modal-overlay.open { opacity: 1; visibility: visible }
+.modal-sheet {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #141420;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px calc(24px + var(--safe-bottom));
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.32,0.72,0,1);
+  z-index: 201;
+  max-height: 85dvh; overflow-y: auto;
+}
+.modal-overlay.open .modal-sheet { transform: translateY(0) }
+.modal-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,0.15);
+  margin: 0 auto 16px;
+}
+.modal-title {
+  font-size: 18px; font-weight: 700; margin-bottom: 20px;
+}
+.form-group { margin-bottom: 16px }
+.form-label {
+  display: block; font-size: 13px; color: var(--text-secondary);
+  margin-bottom: 6px; font-weight: 500;
+}
+.form-input {
+  width: 100%; height: 44px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 15px; padding: 0 12px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+.form-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.form-input::placeholder { color: var(--text-dim) }
+.form-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+}
+.btn-save {
+  width: 100%; height: 48px;
+  background: var(--accent);
+  color: #fff; border: none;
+  border-radius: var(--radius-sm);
+  font-size: 16px; font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  font-family: inherit;
+  margin-top: 4px;
+}
+.btn-save:active { transform: scale(0.97) }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 0; background: transparent }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-top">
+    <h1 class="header-title" id="headerTitle">胸部</h1>
+    <span class="progress-text" id="progressText">0/0</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</header>
+
+<main class="tab-panels">
+  <section class="tab-panel active" data-part="chest" id="panel-chest"></section>
+  <section class="tab-panel" data-part="shoulder" id="panel-shoulder"></section>
+  <section class="tab-panel" data-part="legs" id="panel-legs"></section>
+  <section class="tab-panel" data-part="back" id="panel-back"></section>
+</main>
+
+<button class="fab" id="fabAdd" aria-label="添加动作">+</button>
+
+<nav class="tab-bar">
+  <button class="tab-item active" data-tab="chest">
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="10" width="6" height="4" rx="1"/><rect x="16" y="10" width="6" height="4" rx="1"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    <span class="tab-label">胸部</span>
+  </button>
+  <button class="tab-item" data-tab="shoulder">
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 12h6M15 12h6"/><path d="M1 12a1 1 0 0 1 1-1h1a1 1 0 0 1 0 2H2a1 1 0 0 1-1-1zM21 12a1 1 0 0 1 1-1h0a1 1 0 0 1 0 2h0a1 1 0 0 1-1-1z"/></svg>
+    <span class="tab-label">肩部</span>
+  </button>
+  <button class="tab-item" data-tab="legs">
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v8l-2 8M18 4v8l2 8"/><path d="M6 12h12"/></svg>
+    <span class="tab-label">腿部</span>
+  </button>
+  <button class="tab-item" data-tab="back">
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/><path d="M6 8l6-4 6 4"/><path d="M6 16l6 4 6-4"/></svg>
+    <span class="tab-label">背部</span>
+  </button>
+</nav>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <h2 class="modal-title">添加动作</h2>
+    <div class="form-group">
+      <label class="form-label">动作名称</label>
+      <input class="form-input" type="text" id="inputName" list="exerciseList" placeholder="例如：卧推" autocomplete="off">
+      <datalist id="exerciseList"></datalist>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">组数</label>
+        <input class="form-input" type="number" id="inputSets" value="4" min="1" max="20" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">次数</label>
+        <input class="form-input" type="number" id="inputReps" value="12" min="1" max="100" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label class="form-label">重量(kg)</label>
+        <input class="form-input" type="number" id="inputWeight" value="20" min="0" step="2.5" inputmode="decimal">
+      </div>
+    </div>
+    <button class="btn-save" id="btnSave">保存</button>
+  </div>
+</div>
+
+<script>
+const PARTS = ['chest', 'shoulder', 'legs', 'back'];
+const LABELS = { chest:'胸部', shoulder:'肩部', legs:'腿部', back:'背部' };
+const COLORS = { chest:'#ef4444', shoulder:'#f59e0b', legs:'#10b981', back:'#6366f1' };
+const GLOWS = { chest:'rgba(239,68,68,0.15)', shoulder:'rgba(245,158,11,0.15)', legs:'rgba(16,185,129,0.15)', back:'rgba(99,102,241,0.15)' };
+const SK = { data:'fitPlanData', reset:'fitPlanReset', custom:'fitPlanCustom' };
+
+const Store = {
+  _d: null,
+  load() {
+    if (this._d) return this._d;
+    const raw = localStorage.getItem(SK.data);
+    this._d = raw ? JSON.parse(raw) : { chest:[], shoulder:[], legs:[], back:[] };
+    return this._d;
+  },
+  save() { localStorage.setItem(SK.data, JSON.stringify(this._d)) },
+  getCustom(part) {
+    const raw = localStorage.getItem(SK.custom);
+    const all = raw ? JSON.parse(raw) : {};
+    return all[part] || [];
+  },
+  addCustom(part, name) {
+    const raw = localStorage.getItem(SK.custom);
+    const all = raw ? JSON.parse(raw) : {};
+    if (!all[part]) all[part] = [];
+    if (!all[part].includes(name)) {
+      all[part].push(name);
+      localStorage.setItem(SK.custom, JSON.stringify(all));
+    }
+  },
+  getLastReset() { return localStorage.getItem(SK.reset) },
+  setLastReset(v) { localStorage.setItem(SK.reset, v) }
+};
+
+function checkReset() {
+  const now = new Date();
+  const boundary = new Date(now);
+  boundary.setHours(2, 0, 0, 0);
+  if (now < boundary) boundary.setDate(boundary.getDate() - 1);
+
+  const last = Store.getLastReset();
+  const lastDate = last ? new Date(last) : new Date(0);
+
+  if (lastDate < boundary) {
+    const data = Store.load();
+    for (const p of PARTS) {
+      for (const ex of data[p]) {
+        ex.completedSets = ex.completedSets.map(() => false);
+      }
+    }
+    Store.save();
+    Store.setLastReset(now.toISOString());
+  }
+}
+
+let activeTab = 'chest';
+
+function setAccent(part) {
+  const r = document.documentElement.style;
+  r.setProperty('--accent', COLORS[part]);
+  r.setProperty('--accent-glow', GLOWS[part]);
+}
+
+function switchTab(part) {
+  activeTab = part;
+  setAccent(part);
+  document.querySelectorAll('.tab-item').forEach(el =>
+    el.classList.toggle('active', el.dataset.tab === part)
+  );
+  document.querySelectorAll('.tab-panel').forEach(el =>
+    el.classList.toggle('active', el.dataset.part === part)
+  );
+  document.getElementById('headerTitle').textContent = LABELS[part];
+  updateProgress(part);
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function renderExercises(part) {
+  const panel = document.getElementById('panel-' + part);
+  const exercises = Store.load()[part];
+
+  if (!exercises.length) {
+    panel.innerHTML = '<div class="empty-state"><div class="empty-icon">🏋️</div><p>还没有训练动作<br>点击 + 添加</p></div>';
+    return;
+  }
+
+  panel.innerHTML = exercises.map((ex, i) => {
+    const done = ex.completedSets.filter(Boolean).length;
+    const allDone = done === ex.sets;
+    return `<div class="exercise-card${allDone ? ' all-done' : ''}" data-idx="${i}" style="animation-delay:${i * 0.05}s">
+      <div class="card-header">
+        <span class="card-name">${esc(ex.name)}</span>
+        <span class="card-weight">${ex.weight}kg</span>
+        <button class="btn-delete" data-action="delete" data-idx="${i}" aria-label="删除">&times;</button>
+      </div>
+      <div class="card-info">${ex.reps} 次 × ${ex.sets} 组</div>
+      <div class="set-row">
+        ${ex.completedSets.map((s, si) =>
+          `<div class="set-circle${s ? ' done' : ''}" data-action="toggle" data-ex="${i}" data-set="${si}">${s ? '✓' : (si + 1)}</div>`
+        ).join('')}
+      </div>
+      <div class="card-footer">
+        <span class="card-progress">${done}/${ex.sets} 组</span>
+        <span class="card-pct">${ex.sets ? Math.round(done / ex.sets * 100) : 0}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleSet(exIdx, setIdx) {
+  const data = Store.load();
+  const ex = data[activeTab][exIdx];
+  ex.completedSets[setIdx] = !ex.completedSets[setIdx];
+  Store.save();
+
+  const card = document.querySelectorAll('.tab-panel.active .exercise-card')[exIdx];
+  if (!card) return;
+
+  const circle = card.querySelectorAll('.set-circle')[setIdx];
+  circle.classList.toggle('done');
+  circle.textContent = ex.completedSets[setIdx] ? '✓' : (setIdx + 1);
+  circle.style.animation = 'none';
+  void circle.offsetHeight;
+  circle.style.animation = 'pop 0.3s ease-out';
+
+  const done = ex.completedSets.filter(Boolean).length;
+  card.querySelector('.card-progress').textContent = `${done}/${ex.sets} 组`;
+  card.querySelector('.card-pct').textContent = `${Math.round(done / ex.sets * 100)}%`;
+  card.classList.toggle('all-done', done === ex.sets);
+
+  updateProgress(activeTab);
+}
+
+function deleteExercise(idx) {
+  const data = Store.load();
+  const ex = data[activeTab][idx];
+  if (!confirm(`删除「${ex.name}」？`)) return;
+  data[activeTab].splice(idx, 1);
+  Store.save();
+  renderExercises(activeTab);
+  updateProgress(activeTab);
+}
+
+function updateProgress(part) {
+  const exercises = Store.load()[part];
+  let total = 0, done = 0;
+  for (const ex of exercises) {
+    total += ex.sets;
+    done += ex.completedSets.filter(Boolean).length;
+  }
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = total ? `${done}/${total} 组 · ${pct}%` : '暂无动作';
+}
+
+function openModal() {
+  const modal = document.getElementById('modal');
+  modal.classList.add('open');
+  const list = document.getElementById('exerciseList');
+  const customs = Store.getCustom(activeTab);
+  list.innerHTML = customs.map(n => `<option value="${esc(n)}">`).join('');
+  setTimeout(() => document.getElementById('inputName').focus(), 400);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function saveExercise() {
+  const name = document.getElementById('inputName').value.trim();
+  const sets = Math.max(1, parseInt(document.getElementById('inputSets').value) || 4);
+  const reps = Math.max(1, parseInt(document.getElementById('inputReps').value) || 12);
+  const weight = Math.max(0, parseFloat(document.getElementById('inputWeight').value) || 0);
+  if (!name) {
+    document.getElementById('inputName').focus();
+    return;
+  }
+
+  const data = Store.load();
+  data[activeTab].push({
+    id: Date.now().toString(36),
+    name, sets, reps, weight,
+    completedSets: Array(sets).fill(false)
+  });
+  Store.save();
+  Store.addCustom(activeTab, name);
+
+  document.getElementById('inputName').value = '';
+  closeModal();
+  renderExercises(activeTab);
+  updateProgress(activeTab);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  checkReset();
+  PARTS.forEach(p => renderExercises(p));
+  switchTab('chest');
+
+  document.querySelector('.tab-bar').addEventListener('click', e => {
+    const tab = e.target.closest('.tab-item');
+    if (tab) switchTab(tab.dataset.tab);
+  });
+
+  document.querySelector('.tab-panels').addEventListener('click', e => {
+    const t = e.target.closest('[data-action]');
+    if (!t) return;
+    if (t.dataset.action === 'toggle') toggleSet(+t.dataset.ex, +t.dataset.set);
+    else if (t.dataset.action === 'delete') deleteExercise(+t.dataset.idx);
+  });
+
+  document.getElementById('fabAdd').addEventListener('click', openModal);
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+  document.getElementById('btnSave').addEventListener('click', saveExercise);
+
+  document.getElementById('inputName').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('inputSets').focus();
+  });
+  document.getElementById('inputWeight').addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveExercise();
+  });
+});
+</script>
+</body>
+</html>
