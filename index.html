@@ -612,7 +612,8 @@ function renderExercises(part) {
   }
 
   panel.innerHTML = exercises.map((ex, i) => {
-    const done = ex.completedSets ? ex.completedSets.filter(Boolean).length : 0;
+    const completedSets = ex.completedSets || Array(ex.sets || 0).fill(false);
+    const done = completedSets.filter(Boolean).length;
     const allDone = done === ex.sets;
     return `<div class="exercise-card${allDone ? ' all-done' : ''}" data-idx="${i}" style="animation-delay:${i * 0.05}s">
       <div class="card-header">
@@ -622,7 +623,7 @@ function renderExercises(part) {
       </div>
       <div class="card-info">${ex.reps} 次 × ${ex.sets} 组</div>
       <div class="set-row">
-        ${ex.completedSets ? ex.completedSets.map((s, si) =>
+        ${(ex.completedSets || Array(ex.sets || 0).fill(false)).map((s, si) =>
           `<div class="set-circle${s ? ' done' : ''}" data-action="toggle" data-ex="${i}" data-set="${si}">${s ? '✓' : (si + 1)}</div>`
         ).join('') : ''}
       </div>
@@ -637,6 +638,7 @@ function renderExercises(part) {
 function toggleSet(exIdx, setIdx) {
   const data = Store.load();
   const ex = data[activeTab][exIdx];
+  if (!ex.completedSets) ex.completedSets = Array(ex.sets).fill(false);
   ex.completedSets[setIdx] = !ex.completedSets[setIdx];
   Store.save();
 
