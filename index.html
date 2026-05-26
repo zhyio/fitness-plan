@@ -422,7 +422,7 @@ const Store = {
 
   async init() {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('fitness_data')
         .select('*')
         .eq('user_id', USER_ID)
