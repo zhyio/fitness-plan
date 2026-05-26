@@ -625,7 +625,7 @@ function renderExercises(part) {
       <div class="set-row">
         ${(ex.completedSets || Array(ex.sets || 0).fill(false)).map((s, si) =>
           `<div class="set-circle${s ? ' done' : ''}" data-action="toggle" data-ex="${i}" data-set="${si}">${s ? '✓' : (si + 1)}</div>`
-        ).join('') : ''}
+        ).join('')}
       </div>
       <div class="card-footer">
         <span class="card-progress">${done}/${ex.sets} 组</span>
