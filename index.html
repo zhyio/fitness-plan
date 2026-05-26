@@ -486,7 +486,8 @@ body {
 <script>
 const SUPABASE_URL = 'https://owqhouyafggdzgcqwlji.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QgsSE7ZoIfcaPsJLlkfS5w_tGvRz_I6';
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+if (!supabaseClient) console.error("Supabase script failed to load. CDN might be blocked.");
 const USER_ID = 'default_user';
 
 const PARTS = ['chest', 'shoulder', 'legs', 'back'];
@@ -501,6 +502,7 @@ const Store = {
 
   async init() {
     try {
+      if (!supabaseClient) throw new Error("No supabase client");
       const { data, error } = await supabaseClient
         .from('fitness_data')
         .select('*')
@@ -524,7 +526,7 @@ const Store = {
 
   save() {
     // 异步更新，不阻塞 UI 交互（Optimistic UI 理念）
-    supabaseClient.from('fitness_data').update({
+    if (supabaseClient) supabaseClient.from('fitness_data').update({
       exercises: this._d,
       custom_exercises: this._custom,
       last_reset: this._lastReset,
