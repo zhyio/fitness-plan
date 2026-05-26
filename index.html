@@ -485,7 +485,7 @@ function checkReset() {
   if (lastDate < boundary) {
     const data = Store.load();
     for (const p of PARTS) {
-      for (const ex of data[p]) {
+      if (data[p]) for (const ex of data[p]) {
         if(ex.completedSets) {
           ex.completedSets = ex.completedSets.map(() => false);
         }
@@ -642,18 +642,32 @@ function saveExercise() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // 等待云端数据加载
-  await Store.init();
-
-  // 隐藏加载动画
-  const loader = document.getElementById('loader');
-  if(loader) {
-    loader.style.opacity = '0';
-    setTimeout(() => loader.remove(), 300);
+  try {
+    // 等待云端数据加载
+    await Store.init();
+  } catch (err) {
+    console.error("Initialization error:", err);
+  } finally {
+    // 隐藏加载动画
+    const loader = document.getElementById('loader');
+    if(loader) {
+      loader.style.opacity = '0';
+      setTimeout(() => loader.remove(), 300);
+    }
   }
 
-  checkReset();
-  PARTS.forEach(p => renderExercises(p));
+  try {
+    checkReset();
+  } catch (e) {
+    console.error("Reset check error:", e);
+  }
+  
+  try {
+    PARTS.forEach(p => renderExercises(p));
+  } catch (e) {
+    console.error("Render error:", e);
+  }
+  
   switchTab('chest');
 
   document.querySelector('.tab-bar').addEventListener('click', e => {
