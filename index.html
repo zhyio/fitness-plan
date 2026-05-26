@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Fitness Plan</title>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --bg-primary: #0a0a0f;
@@ -60,6 +61,21 @@ body {
 @keyframes shimmer {
   from { background-position: -200% 0 }
   to   { background-position: 200% 0 }
+}
+@keyframes spin {
+  to { transform: rotate(360deg) }
+}
+
+/* Loader */
+.loader-overlay {
+  position: fixed; inset: 0; background: var(--bg-primary); z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity 0.3s;
+}
+.spinner {
+  width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 1s linear infinite; margin-bottom: 16px;
 }
 
 /* Header */
@@ -320,6 +336,11 @@ body {
 </head>
 <body>
 
+<div class="loader-overlay" id="loader">
+  <div class="spinner"></div>
+  <div style="color: var(--text-secondary); font-size: 14px;">同步云端数据中...</div>
+</div>
+
 <header class="app-header">
   <div class="header-top">
     <h1 class="header-title" id="headerTitle">胸部</h1>
@@ -384,37 +405,72 @@ body {
 </div>
 
 <script>
+const SUPABASE_URL = 'https://owqhouyafggdzgcqwlji.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_QgsSE7ZoIfcaPsJLlkfS5w_tGvRz_I6';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const USER_ID = 'default_user';
+
 const PARTS = ['chest', 'shoulder', 'legs', 'back'];
 const LABELS = { chest:'胸部', shoulder:'肩部', legs:'腿部', back:'背部' };
 const COLORS = { chest:'#ef4444', shoulder:'#f59e0b', legs:'#10b981', back:'#6366f1' };
 const GLOWS = { chest:'rgba(239,68,68,0.15)', shoulder:'rgba(245,158,11,0.15)', legs:'rgba(16,185,129,0.15)', back:'rgba(99,102,241,0.15)' };
-const SK = { data:'fitPlanData', reset:'fitPlanReset', custom:'fitPlanCustom' };
 
 const Store = {
-  _d: null,
-  load() {
-    if (this._d) return this._d;
-    const raw = localStorage.getItem(SK.data);
-    this._d = raw ? JSON.parse(raw) : { chest:[], shoulder:[], legs:[], back:[] };
-    return this._d;
-  },
-  save() { localStorage.setItem(SK.data, JSON.stringify(this._d)) },
-  getCustom(part) {
-    const raw = localStorage.getItem(SK.custom);
-    const all = raw ? JSON.parse(raw) : {};
-    return all[part] || [];
-  },
-  addCustom(part, name) {
-    const raw = localStorage.getItem(SK.custom);
-    const all = raw ? JSON.parse(raw) : {};
-    if (!all[part]) all[part] = [];
-    if (!all[part].includes(name)) {
-      all[part].push(name);
-      localStorage.setItem(SK.custom, JSON.stringify(all));
+  _d: { chest:[], shoulder:[], legs:[], back:[] },
+  _custom: {},
+  _lastReset: '',
+
+  async init() {
+    try {
+      const { data, error } = await supabase
+        .from('fitness_data')
+        .select('*')
+        .eq('user_id', USER_ID)
+        .single();
+
+      if (data) {
+        this._d = data.exercises || this._d;
+        this._custom = data.custom_exercises || this._custom;
+        this._lastReset = data.last_reset || '';
+      } else {
+        // 如果没有第一条数据，尝试插入
+        await supabase.from('fitness_data').insert([{ user_id: USER_ID }]);
+      }
+    } catch (e) {
+      console.error("Supabase load error:", e);
     }
   },
-  getLastReset() { return localStorage.getItem(SK.reset) },
-  setLastReset(v) { localStorage.setItem(SK.reset, v) }
+
+  load() { return this._d; },
+
+  save() {
+    // 异步更新，不阻塞 UI 交互（Optimistic UI 理念）
+    supabase.from('fitness_data').update({
+      exercises: this._d,
+      custom_exercises: this._custom,
+      last_reset: this._lastReset,
+      updated_at: new Date().toISOString()
+    }).eq('user_id', USER_ID).then(({error}) => {
+      if(error) console.error("Supabase sync error:", error);
+    });
+  },
+
+  getCustom(part) { return this._custom[part] || []; },
+
+  addCustom(part, name) {
+    if (!this._custom[part]) this._custom[part] = [];
+    if (!this._custom[part].includes(name)) {
+      this._custom[part].push(name);
+      this.save();
+    }
+  },
+
+  getLastReset() { return this._lastReset; },
+
+  setLastReset(v) {
+    this._lastReset = v;
+    this.save();
+  }
 };
 
 function checkReset() {
@@ -430,10 +486,12 @@ function checkReset() {
     const data = Store.load();
     for (const p of PARTS) {
       for (const ex of data[p]) {
-        ex.completedSets = ex.completedSets.map(() => false);
+        if(ex.completedSets) {
+          ex.completedSets = ex.completedSets.map(() => false);
+        }
       }
     }
-    Store.save();
+    // SetLastReset 会自动调用 Store.save()
     Store.setLastReset(now.toISOString());
   }
 }
@@ -469,13 +527,13 @@ function renderExercises(part) {
   const panel = document.getElementById('panel-' + part);
   const exercises = Store.load()[part];
 
-  if (!exercises.length) {
+  if (!exercises || !exercises.length) {
     panel.innerHTML = '<div class="empty-state"><div class="empty-icon">🏋️</div><p>还没有训练动作<br>点击 + 添加</p></div>';
     return;
   }
 
   panel.innerHTML = exercises.map((ex, i) => {
-    const done = ex.completedSets.filter(Boolean).length;
+    const done = ex.completedSets ? ex.completedSets.filter(Boolean).length : 0;
     const allDone = done === ex.sets;
     return `<div class="exercise-card${allDone ? ' all-done' : ''}" data-idx="${i}" style="animation-delay:${i * 0.05}s">
       <div class="card-header">
@@ -485,9 +543,9 @@ function renderExercises(part) {
       </div>
       <div class="card-info">${ex.reps} 次 × ${ex.sets} 组</div>
       <div class="set-row">
-        ${ex.completedSets.map((s, si) =>
+        ${ex.completedSets ? ex.completedSets.map((s, si) =>
           `<div class="set-circle${s ? ' done' : ''}" data-action="toggle" data-ex="${i}" data-set="${si}">${s ? '✓' : (si + 1)}</div>`
-        ).join('')}
+        ).join('') : ''}
       </div>
       <div class="card-footer">
         <span class="card-progress">${done}/${ex.sets} 组</span>
@@ -534,9 +592,11 @@ function deleteExercise(idx) {
 function updateProgress(part) {
   const exercises = Store.load()[part];
   let total = 0, done = 0;
-  for (const ex of exercises) {
-    total += ex.sets;
-    done += ex.completedSets.filter(Boolean).length;
+  if(exercises) {
+    for (const ex of exercises) {
+      total += ex.sets;
+      if(ex.completedSets) done += ex.completedSets.filter(Boolean).length;
+    }
   }
   const pct = total ? Math.round(done / total * 100) : 0;
   document.getElementById('progressFill').style.width = pct + '%';
@@ -581,7 +641,17 @@ function saveExercise() {
   updateProgress(activeTab);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // 等待云端数据加载
+  await Store.init();
+
+  // 隐藏加载动画
+  const loader = document.getElementById('loader');
+  if(loader) {
+    loader.style.opacity = '0';
+    setTimeout(() => loader.remove(), 300);
+  }
+
   checkReset();
   PARTS.forEach(p => renderExercises(p));
   switchTab('chest');
