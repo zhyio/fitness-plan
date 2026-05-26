@@ -407,7 +407,7 @@ body {
 <script>
 const SUPABASE_URL = 'https://owqhouyafggdzgcqwlji.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QgsSE7ZoIfcaPsJLlkfS5w_tGvRz_I6';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const USER_ID = 'default_user';
 
 const PARTS = ['chest', 'shoulder', 'legs', 'back'];
@@ -434,7 +434,7 @@ const Store = {
         this._lastReset = data.last_reset || '';
       } else {
         // 如果没有第一条数据，尝试插入
-        await supabase.from('fitness_data').insert([{ user_id: USER_ID }]);
+        await supabaseClient.from('fitness_data').insert([{ user_id: USER_ID }]);
       }
     } catch (e) {
       console.error("Supabase load error:", e);
@@ -445,7 +445,7 @@ const Store = {
 
   save() {
     // 异步更新，不阻塞 UI 交互（Optimistic UI 理念）
-    supabase.from('fitness_data').update({
+    supabaseClient.from('fitness_data').update({
       exercises: this._d,
       custom_exercises: this._custom,
       last_reset: this._lastReset,
