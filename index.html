@@ -773,12 +773,18 @@ body {
   color: var(--text-secondary);
 }
 
+.calendar-wrapper {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
 .calendar-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0 auto 12px auto;
-  max-width: 280px;
+  margin-bottom: 16px;
 }
 .calendar-title {
   font-size: 15px;
@@ -804,10 +810,8 @@ body {
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: 4px;
   text-align: center;
-  margin: 0 auto 20px auto;
-  max-width: 280px;
 }
 .calendar-day-header {
   font-size: 11px;
@@ -1078,25 +1082,27 @@ body {
       </div>
     </div>
     
-    <div class="calendar-header">
-      <div class="calendar-title" id="calendarTitle">2026年5月</div>
-      <div class="calendar-nav">
-        <button class="calendar-btn" id="btnPrevMonth">&lt;</button>
-        <button class="calendar-btn" id="btnNextMonth">&gt;</button>
+    <div class="calendar-wrapper">
+      <div class="calendar-header">
+        <div class="calendar-title" id="calendarTitle">2026年5月</div>
+        <div class="calendar-nav">
+          <button class="calendar-btn" id="btnPrevMonth">&lt;</button>
+          <button class="calendar-btn" id="btnNextMonth">&gt;</button>
+        </div>
       </div>
+      
+      <div class="calendar-grid">
+        <div class="calendar-day-header">一</div>
+        <div class="calendar-day-header">二</div>
+        <div class="calendar-day-header">三</div>
+        <div class="calendar-day-header">四</div>
+        <div class="calendar-day-header">五</div>
+        <div class="calendar-day-header">六</div>
+        <div class="calendar-day-header">日</div>
+        <!-- dates will be injected here -->
+      </div>
+      <div id="calendarDates" class="calendar-grid"></div>
     </div>
-    
-    <div class="calendar-grid">
-      <div class="calendar-day-header">一</div>
-      <div class="calendar-day-header">二</div>
-      <div class="calendar-day-header">三</div>
-      <div class="calendar-day-header">四</div>
-      <div class="calendar-day-header">五</div>
-      <div class="calendar-day-header">六</div>
-      <div class="calendar-day-header">日</div>
-      <!-- dates will be injected here -->
-    </div>
-    <div id="calendarDates" class="calendar-grid" style="margin-top: -20px;"></div>
     
     <div id="dayDetailsContainer"></div>
   </div>
