@@ -1126,6 +1126,60 @@ function emptyWorkoutPlan() {
   return { chest:[], shoulder:[], legs:[], back:[], abs:[] };
 }
 
+const DEFAULT_TEMPLATES = {
+  chest: [
+    { name: '杠铃卧推', sets: 4, reps: 10, weight: 60 },
+    { name: '上斜哑铃卧推', sets: 4, reps: 10, weight: 20 },
+    { name: '下斜杠铃卧推', sets: 4, reps: 10, weight: 50 },
+    { name: '蝴蝶机夹胸', sets: 4, reps: 12, weight: 30 },
+    { name: '绳索夹胸', sets: 4, reps: 15, weight: 15 },
+    { name: '哑铃飞鸟', sets: 4, reps: 12, weight: 15 },
+    { name: '俯卧撑', sets: 4, reps: 15, weight: 0 },
+    { name: '双杠臂屈伸', sets: 4, reps: 10, weight: 0 }
+  ],
+  shoulder: [
+    { name: '杠铃推举', sets: 4, reps: 10, weight: 40 },
+    { name: '坐姿哑铃推举', sets: 4, reps: 10, weight: 15 },
+    { name: '哑铃侧平举', sets: 4, reps: 15, weight: 10 },
+    { name: '单臂绳索侧平举', sets: 4, reps: 15, weight: 10 },
+    { name: '哑铃前平举', sets: 4, reps: 12, weight: 10 },
+    { name: '蝴蝶机反向飞鸟', sets: 4, reps: 12, weight: 20 },
+    { name: '哑铃俯身飞鸟', sets: 4, reps: 12, weight: 10 },
+    { name: '面拉 (Face Pull)', sets: 4, reps: 15, weight: 20 }
+  ],
+  legs: [
+    { name: '杠铃深蹲', sets: 5, reps: 8, weight: 80 },
+    { name: '倒蹬 (Leg Press)', sets: 4, reps: 10, weight: 120 },
+    { name: '哑铃箭步蹲', sets: 4, reps: 12, weight: 15 },
+    { name: '保加利亚分腿蹲', sets: 4, reps: 10, weight: 15 },
+    { name: '罗马尼亚硬拉', sets: 4, reps: 10, weight: 60 },
+    { name: '哈克深蹲', sets: 4, reps: 10, weight: 80 },
+    { name: '坐姿腿屈伸', sets: 4, reps: 15, weight: 40 },
+    { name: '俯卧腿弯举', sets: 4, reps: 15, weight: 35 },
+    { name: '站姿提踵', sets: 4, reps: 20, weight: 40 }
+  ],
+  back: [
+    { name: '引体向上', sets: 4, reps: 10, weight: 0 },
+    { name: '高位下拉', sets: 4, reps: 12, weight: 40 },
+    { name: '杠铃划船', sets: 4, reps: 10, weight: 50 },
+    { name: '单臂哑铃划船', sets: 4, reps: 10, weight: 25 },
+    { name: '坐姿绳索划船', sets: 4, reps: 12, weight: 45 },
+    { name: '直臂下拉', sets: 4, reps: 15, weight: 20 },
+    { name: 'T杠划船', sets: 4, reps: 10, weight: 40 },
+    { name: '传统硬拉', sets: 5, reps: 5, weight: 100 },
+    { name: '山羊挺身', sets: 4, reps: 15, weight: 10 }
+  ],
+  abs: [
+    { name: '卷腹', sets: 4, reps: 20, weight: 0 },
+    { name: '悬垂举腿', sets: 4, reps: 15, weight: 0 },
+    { name: '俄罗斯转体', sets: 4, reps: 20, weight: 10 },
+    { name: '平板支撑', sets: 4, reps: 60, weight: 0 },
+    { name: '仰卧交替抬腿', sets: 4, reps: 20, weight: 0 },
+    { name: '器械卷腹', sets: 4, reps: 15, weight: 30 },
+    { name: '健腹轮', sets: 4, reps: 10, weight: 0 }
+  ]
+};
+
 function normalizeTemplates(source = {}) {
   const normalized = {};
   for (const part of PARTS) {
@@ -1147,6 +1201,21 @@ function normalizeTemplates(source = {}) {
     }
   }
   return normalized;
+}
+
+function mergeTemplates(custom = {}) {
+  const merged = normalizeTemplates(DEFAULT_TEMPLATES);
+  const normalizedCustom = normalizeTemplates(custom);
+  for (const part of PARTS) {
+    if (normalizedCustom[part]) {
+      for (const item of normalizedCustom[part]) {
+        const existingIdx = merged[part].findIndex(t => t.name.toLowerCase() === item.name.toLowerCase());
+        if (existingIdx >= 0) merged[part][existingIdx] = item;
+        else merged[part].unshift(item);
+      }
+    }
+  }
+  return merged;
 }
 
 /* ===============================================================
@@ -1225,7 +1294,7 @@ const IDBCache = {
    =============================================================== */
 const Store = {
   _d: emptyWorkoutPlan(),
-  _custom: normalizeTemplates(),
+  _custom: mergeTemplates(),
   _lastReset: '',
   _history: [],
 
@@ -1235,7 +1304,17 @@ const Store = {
       const cached = await IDBCache.get('fitness_data');
       if (cached) {
         this._d = { ...emptyWorkoutPlan(), ...(cached.exercises || {}) };
-        this._custom = normalizeTemplates(cached.custom_exercises);
+        
+        let custom = cached.custom_exercises || {};
+        let count = Object.values(custom).reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
+        // 如果自定义动作库较少（< 15个），说明可能是新用户或之前没有预设数据，使用合并逻辑
+        if (count < 15) {
+          this._custom = mergeTemplates(custom);
+          this.save(); // 存回覆盖
+        } else {
+          this._custom = normalizeTemplates(custom);
+        }
+        
         this._lastReset = cached.last_reset || '';
       }
       this._history = await IDBCache.getAllHistory();
@@ -1255,7 +1334,13 @@ const Store = {
       if (data) {
         // Supabase 数据作为权威来源
         this._d = { ...emptyWorkoutPlan(), ...(data.exercises || {}) };
-        this._custom = data.custom_exercises ? normalizeTemplates(data.custom_exercises) : this._custom;
+        let remoteCustom = data.custom_exercises || {};
+        let count = Object.values(remoteCustom).reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
+        if (count < 15) {
+          this._custom = mergeTemplates(remoteCustom);
+        } else {
+          this._custom = normalizeTemplates(remoteCustom);
+        }
         this._lastReset = data.last_reset || this._lastReset;
         // 同步到 IndexedDB
         await this._saveToIDB();
