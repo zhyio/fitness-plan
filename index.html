@@ -1334,16 +1334,18 @@ const Store = {
       if (data) {
         // Supabase 数据作为权威来源
         this._d = { ...emptyWorkoutPlan(), ...(data.exercises || {}) };
+        this._lastReset = data.last_reset || this._lastReset;
+        
         let remoteCustom = data.custom_exercises || {};
         let count = Object.values(remoteCustom).reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
         if (count < 15) {
           this._custom = mergeTemplates(remoteCustom);
+          this.save(); // 存回覆盖，并同步到远程数据库
         } else {
           this._custom = normalizeTemplates(remoteCustom);
+          // 同步到 IndexedDB
+          await this._saveToIDB();
         }
-        this._lastReset = data.last_reset || this._lastReset;
-        // 同步到 IndexedDB
-        await this._saveToIDB();
       } else {
         await supabaseClient.from('fitness_data').insert([{ user_id: USER_ID }]);
       }
