@@ -1636,6 +1636,16 @@ function toggleSet(exIdx, setIdx) {
       ex.completedSets = Array(totalSets).fill(false);
       for(let j=0; j<Math.min(totalSets, old.length); j++) ex.completedSets[j] = old[j];
   }
+  
+  const isCurrentlyDone = ex.completedSets[setIdx];
+  if (!isCurrentlyDone) {
+    // 只能按顺序点亮，不能跳着点
+    if (setIdx > 0 && !ex.completedSets[setIdx - 1]) return;
+  } else {
+    // 只能从后往前取消，不能跳着取消
+    if (setIdx < totalSets - 1 && ex.completedSets[setIdx + 1]) return;
+  }
+
   ex.completedSets[setIdx] = !ex.completedSets[setIdx];
   Store.save();
 
