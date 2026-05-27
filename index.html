@@ -807,6 +807,39 @@ body {
   justify-content: center;
   font-size: 12px;
 }
+.set-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.set-circle.bonus {
+  opacity: 0.5;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+.set-circle.done {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.set-circle.bonus.done {
+  opacity: 1;
+  background: var(--accent);
+  border-style: solid;
+}
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1558,24 +1591,34 @@ function renderExercises(part) {
   }
 
   panel.innerHTML = exercises.map((ex, i) => {
-    const completedSets = ex.completedSets || Array(ex.sets || 0).fill(false);
+    const totalSets = (ex.sets || 0) + 2;
+    let completedSets = ex.completedSets;
+    if (!completedSets || completedSets.length !== totalSets) {
+      const old = completedSets || [];
+      completedSets = Array(totalSets).fill(false);
+      for(let j=0; j<Math.min(totalSets, old.length); j++) completedSets[j] = old[j];
+      ex.completedSets = completedSets;
+    }
     const done = completedSets.filter(Boolean).length;
-    const allDone = done === ex.sets;
+    const progressDone = Math.min(done, ex.sets);
+    const allDone = progressDone === ex.sets;
     return `<div class="exercise-card${allDone ? ' all-done' : ''}" data-idx="${i}" style="animation-delay:${i * 0.07}s">
       <div class="card-header">
         <span class="card-name">${esc(ex.name)}</span>
         <span class="card-weight">${ex.weight}kg</span>
         <button class="btn-delete" data-action="delete" data-idx="${i}" aria-label="删除">&times;</button>
       </div>
-      <div class="card-info">${ex.reps} 次 × ${ex.sets} 组</div>
+      <div class="card-info">${ex.reps} 次 × ${ex.sets} 组 (+2 过量组)</div>
       <div class="set-row">
-        ${completedSets.map((s, si) =>
-          `<div class="set-circle${s ? ' done' : ''}" data-action="toggle" data-ex="${i}" data-set="${si}">${s ? '✓' : (si + 1)}</div>`
-        ).join('')}
+        ${completedSets.map((s, si) => {
+          const isBonus = si >= ex.sets;
+          const bonusClass = isBonus ? ' bonus' : '';
+          return `<div class="set-circle${s ? ' done' : ''}${bonusClass}" data-action="toggle" data-ex="${i}" data-set="${si}">${s ? '✓' : (si + 1)}</div>`;
+        }).join('')}
       </div>
       <div class="card-footer">
         <span class="card-progress">${done}/${ex.sets} 组</span>
-        <span class="card-pct">${ex.sets ? Math.round(done / ex.sets * 100) : 0}%</span>
+        <span class="card-pct">${ex.sets ? Math.round(progressDone / ex.sets * 100) : 0}%</span>
       </div>
     </div>`;
   }).join('');
@@ -1587,8 +1630,12 @@ function renderExercises(part) {
 function toggleSet(exIdx, setIdx) {
   const data = Store.load();
   const ex = data[activeTab][exIdx];
-  if (!ex.completedSets) ex.completedSets = Array(ex.sets).fill(false);
-  const wasComplete = ex.completedSets.filter(Boolean).length === ex.sets;
+  const totalSets = (ex.sets || 0) + 2;
+  if (!ex.completedSets || ex.completedSets.length !== totalSets) {
+      const old = ex.completedSets || [];
+      ex.completedSets = Array(totalSets).fill(false);
+      for(let j=0; j<Math.min(totalSets, old.length); j++) ex.completedSets[j] = old[j];
+  }
   ex.completedSets[setIdx] = !ex.completedSets[setIdx];
   Store.save();
 
@@ -1613,10 +1660,11 @@ function toggleSet(exIdx, setIdx) {
 
   // Update footer
   const done = ex.completedSets.filter(Boolean).length;
+  const progressDone = Math.min(done, ex.sets);
   card.querySelector('.card-progress').textContent = `${done}/${ex.sets} 组`;
-  card.querySelector('.card-pct').textContent = `${Math.round(done / ex.sets * 100)}%`;
+  card.querySelector('.card-pct').textContent = `${ex.sets ? Math.round(progressDone / ex.sets * 100) : 0}%`;
 
-  const allDone = done === ex.sets;
+  const allDone = progressDone === ex.sets;
   card.classList.toggle('all-done', allDone);
 
   // Celebrate if just completed all sets!
@@ -1647,20 +1695,24 @@ function deleteExercise(idx) {
    =============================================================== */
 function updateProgress(part) {
   const exercises = Store.load()[part];
-  let total = 0, done = 0;
+  let totalSets = 0, doneForPct = 0, doneActual = 0;
   if (exercises) {
     for (const ex of exercises) {
-      total += ex.sets;
-      if (ex.completedSets) done += ex.completedSets.filter(Boolean).length;
+      totalSets += ex.sets;
+      if (ex.completedSets) {
+        const d = ex.completedSets.filter(Boolean).length;
+        doneActual += d;
+        doneForPct += Math.min(d, ex.sets);
+      }
     }
   }
-  const pct = total ? Math.round(done / total * 100) : 0;
+  const pct = totalSets ? Math.round(doneForPct / totalSets * 100) : 0;
   const fill = document.getElementById('progressFill');
   const text = document.getElementById('progressText');
 
   fill.style.width = pct + '%';
 
-  const newText = total ? `${done}/${total} 组 · ${pct}%` : '暂无动作';
+  const newText = totalSets ? `${doneActual}/${totalSets} 组 · ${pct}%` : '暂无动作';
   if (text.textContent !== newText) {
     text.textContent = newText;
     text.classList.remove('pop');
