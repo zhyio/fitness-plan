@@ -919,6 +919,13 @@ body {
     <h1 class="header-title" id="headerTitle">胸部</h1>
     <div class="header-actions">
       <span class="progress-text" id="progressText">0/0</span>
+      <button class="settings-trigger" id="btnStats" aria-label="统计数据">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <line x1="3" y1="9" x2="21" y2="9"/>
+          <line x1="9" y1="21" x2="9" y2="9"/>
+        </svg>
+      </button>
       <button class="settings-trigger" id="btnSettings" aria-label="动作设置">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2Z"/>
@@ -937,7 +944,6 @@ body {
   <section class="tab-panel" data-part="legs" id="panel-legs"></section>
   <section class="tab-panel" data-part="back" id="panel-back"></section>
   <section class="tab-panel" data-part="abs" id="panel-abs"></section>
-  <section class="tab-panel" data-part="history" id="panel-history"></section>
 </main>
 
 <!-- FAB -->
@@ -993,16 +999,6 @@ body {
     </svg>
     <span class="tab-label">腹部</span>
   </button>
-  <button class="tab-item" data-tab="history" id="tab-history">
-    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <rect class="icon-accent" fill="currentColor" stroke="none" x="4.7" y="5.5" width="14.6" height="14" rx="3"/>
-      <rect x="4.7" y="5.5" width="14.6" height="14" rx="3"/>
-      <path d="M8.5 4v3M15.5 4v3M4.7 9.5h14.6"/>
-      <path d="m9 14.1 2 2 4.2-4.1"/>
-      <circle class="icon-cheek" stroke="none" cx="16.5" cy="17" r=".48"/>
-    </svg>
-    <span class="tab-label">历史</span>
-  </button>
 </nav>
 
 <!-- Modal -->
@@ -1054,6 +1050,50 @@ body {
   </div>
 </div>
 
+<!-- Stats Modal -->
+<div class="modal-overlay" id="statsModal">
+  <div class="modal-sheet settings-sheet">
+    <div class="modal-handle"></div>
+    <div class="settings-top">
+      <h2 class="modal-title">数据统计</h2>
+      <button class="sheet-close" id="btnCloseStats" aria-label="关闭统计">&times;</button>
+    </div>
+    
+    <div class="stats-overview">
+      <div class="stat-card">
+        <div class="stat-value" id="statWeekDays">0</div>
+        <div class="stat-label">本周训练天数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statMonthDays">0</div>
+        <div class="stat-label">本月训练天数</div>
+      </div>
+    </div>
+    
+    <div class="calendar-header">
+      <div class="calendar-title" id="calendarTitle">2026年5月</div>
+      <div class="calendar-nav">
+        <button class="calendar-btn" id="btnPrevMonth">&lt;</button>
+        <button class="calendar-btn" id="btnNextMonth">&gt;</button>
+      </div>
+    </div>
+    
+    <div class="calendar-grid">
+      <div class="calendar-day-header">一</div>
+      <div class="calendar-day-header">二</div>
+      <div class="calendar-day-header">三</div>
+      <div class="calendar-day-header">四</div>
+      <div class="calendar-day-header">五</div>
+      <div class="calendar-day-header">六</div>
+      <div class="calendar-day-header">日</div>
+      <!-- dates will be injected here -->
+    </div>
+    <div id="calendarDates" class="calendar-grid" style="margin-top: -20px;"></div>
+    
+    <div id="dayDetailsContainer"></div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -1068,13 +1108,13 @@ if (!supabaseClient) console.warn('Supabase SDK not loaded — running in offlin
 const USER_ID = 'default_user';
 
 const PARTS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
-const ALL_TABS = ['chest', 'shoulder', 'legs', 'back', 'abs', 'history'];
-const LABELS = { chest:'胸部', shoulder:'肩部', legs:'腿部', back:'背部', abs:'腹部', history:'历史' };
-const COLORS = { chest:'#ff3366', shoulder:'#ff9933', legs:'#00e676', back:'#6366f1', abs:'#00d7c7', history:'#e040fb' };
+const ALL_TABS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
+const LABELS = { chest:'胸部', shoulder:'肩部', legs:'腿部', back:'背部', abs:'腹部' };
+const COLORS = { chest:'#ff3366', shoulder:'#ff9933', legs:'#00e676', back:'#6366f1', abs:'#00d7c7', stats:'#e040fb' };
 const GLOWS  = {
   chest:'rgba(255,51,102,0.2)', shoulder:'rgba(255,153,51,0.2)',
   legs:'rgba(0,230,118,0.2)', back:'rgba(99,102,241,0.2)',
-  abs:'rgba(0,215,199,0.2)', history:'rgba(224,64,251,0.2)'
+  abs:'rgba(0,215,199,0.2)', stats:'rgba(224,64,251,0.2)'
 };
 
 function emptyWorkoutPlan() {
@@ -1385,16 +1425,9 @@ function switchTab(part) {
 
   // FAB visibility
   const fab = document.getElementById('fabAdd');
-  fab.classList.toggle('hidden', part === 'history');
+  fab.classList.remove('hidden');
 
-  if (part === 'history') {
-    renderHistory();
-    // Hide progress for history
-    document.getElementById('progressFill').style.width = '0%';
-    document.getElementById('progressText').textContent = '训练记录';
-  } else {
-    updateProgress(part);
-  }
+  updateProgress(part);
 }
 
 /* ===============================================================
@@ -1536,150 +1569,122 @@ function updateProgress(part) {
 }
 
 /* ===============================================================
-   UI: HISTORY
+   UI: STATS & CALENDAR
    =============================================================== */
-function renderHistory(filter = 'all') {
-  const panel = document.getElementById('panel-history');
+let currentCalDate = new Date();
+let selectedDateStr = null;
+
+function calculateStats() {
   const history = Store.getHistory();
-
-  // Build stats
-  const totalDays = new Set(history.map(h => h.date)).size;
-  let totalExDone = 0, totalExSets = 0;
-  for (const h of history) {
-    for (const p of Object.keys(h.parts)) {
-      for (const ex of h.parts[p]) {
-        totalExDone += ex.done;
-        totalExSets += ex.sets;
-      }
-    }
-  }
-  const avgPct = totalExSets ? Math.round(totalExDone / totalExSets * 100) : 0;
-
-  // Calculate streak
-  let streak = 0;
-  const sortedDates = [...new Set(history.map(h => h.date))].sort().reverse();
-  if (sortedDates.length) {
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-    if (sortedDates[0] === today || sortedDates[0] === yesterday) {
-      streak = 1;
-      for (let i = 1; i < sortedDates.length; i++) {
-        const prev = new Date(sortedDates[i - 1]);
-        const curr = new Date(sortedDates[i]);
-        const diff = (prev - curr) / 86400000;
-        if (diff === 1) streak++;
-        else break;
-      }
-    }
-  }
-
-  // Filter history
-  const filtered = filter === 'all'
-    ? history
-    : history.filter(h => h.parts[filter] && h.parts[filter].length);
-
-  // Build HTML
-  const filterBtns = [
-    { key: 'all', label: '全部' },
-    { key: 'chest', label: '胸部' },
-    { key: 'shoulder', label: '肩部' },
-    { key: 'legs', label: '腿部' },
-    { key: 'back', label: '背部' },
-    { key: 'abs', label: '腹部' }
-  ];
-
-  let html = `
-    <div class="history-stats">
-      <div class="stat-card">
-        <div class="stat-value">${totalDays}</div>
-        <div class="stat-label">训练天数</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">${streak}</div>
-        <div class="stat-label">连续天数</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">${avgPct}%</div>
-        <div class="stat-label">完成率</div>
-      </div>
-    </div>
-    <div class="history-filter" id="historyFilter">
-      ${filterBtns.map(b =>
-        `<button class="filter-btn${b.key === filter ? ' active' : ''}" data-filter="${b.key}">${b.label}</button>`
-      ).join('')}
-    </div>
-    <div id="historyList">`;
-
-  if (!filtered.length) {
-    html += `<div class="history-empty">
-      <div style="font-size:40px;margin-bottom:12px;opacity:0.3">📋</div>
-      暂无训练记录<br>完成训练后会自动保存
-    </div>`;
-  } else {
-    // Group by date, reversed
-    const grouped = {};
-    for (const h of filtered) {
-      if (!grouped[h.date]) grouped[h.date] = [];
-      grouped[h.date].push(h);
-    }
-    const dates = Object.keys(grouped).sort().reverse();
-
-    dates.forEach((date, di) => {
-      const dayLabel = formatDate(date);
-      const entries = grouped[date];
-      let dayDone = 0, daySets = 0;
-      const items = [];
-      for (const entry of entries) {
-        const parts = filter === 'all' ? Object.keys(entry.parts) : [filter];
-        for (const p of parts) {
-          if (!entry.parts[p]) continue;
-          for (const ex of entry.parts[p]) {
-            dayDone += ex.done;
-            daySets += ex.sets;
-            items.push({ ...ex, part: p });
-          }
-        }
-      }
-      const dayPct = daySets ? Math.round(dayDone / daySets * 100) : 0;
-
-      html += `<div class="history-day" style="animation-delay:${di * 0.06}s">
-        <div class="history-date">
-          ${dayLabel}
-          <span class="history-date-badge">${dayPct}%</span>
-        </div>`;
-      for (const item of items) {
-        html += `<div class="history-item">
-          <div class="history-item-left">
-            <span class="history-item-name">${esc(item.name)}</span>
-            <span class="history-item-detail">${LABELS[item.part]} · ${item.reps}次 × ${item.sets}组 · ${item.weight}kg</span>
-          </div>
-          <span class="history-item-pct">${item.done}/${item.sets}</span>
-        </div>`;
-      }
-      html += `</div>`;
-    });
-  }
-
-  html += `</div>`;
-  panel.innerHTML = html;
-
-  // Bind filter clicks
-  document.getElementById('historyFilter')?.addEventListener('click', e => {
-    const btn = e.target.closest('.filter-btn');
-    if (btn) renderHistory(btn.dataset.filter);
+  const now = new Date();
+  
+  // Natural Week (Monday as start)
+  const dayOfWeek = now.getDay() || 7; 
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - dayOfWeek + 1);
+  weekStart.setHours(0,0,0,0);
+  
+  // Natural Month
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  
+  let weekDays = new Set();
+  let monthDays = new Set();
+  
+  history.forEach(h => {
+    const hDate = new Date(h.date + 'T00:00:00');
+    if (hDate >= weekStart) weekDays.add(h.date);
+    if (hDate >= monthStart) monthDays.add(h.date);
   });
+  
+  document.getElementById('statWeekDays').textContent = weekDays.size;
+  document.getElementById('statMonthDays').textContent = monthDays.size;
 }
 
-function formatDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  const today = new Date();
-  const yesterday = new Date(Date.now() - 86400000);
-  if (dateStr === today.toISOString().slice(0, 10)) return '今天';
-  if (dateStr === yesterday.toISOString().slice(0, 10)) return '昨天';
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
-  return `${month}月${day}日 · 周${weekdays[d.getDay()]}`;
+function renderCalendar() {
+  const year = currentCalDate.getFullYear();
+  const month = currentCalDate.getMonth();
+  
+  document.getElementById('calendarTitle').textContent = `${year}年${month + 1}月`;
+  
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  
+  let firstDayOfWeek = firstDay.getDay() || 7; // Monday = 1
+  
+  const history = Store.getHistory();
+  const historyDates = new Set(history.map(h => h.date));
+  
+  let html = '';
+  // Empty cells before start of month
+  for (let i = 1; i < firstDayOfWeek; i++) {
+    html += `<div class="calendar-cell empty"></div>`;
+  }
+  
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const dStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasRecord = historyDates.has(dStr);
+    const isSelected = selectedDateStr === dStr;
+    const classes = ['calendar-cell'];
+    if (hasRecord) classes.push('has-record');
+    if (isSelected) classes.push('selected');
+    
+    html += `<div class="${classes.join(' ')}" onclick="selectDate('${dStr}')">${d}</div>`;
+  }
+  
+  document.getElementById('calendarDates').innerHTML = html;
+  renderDayDetails();
+}
+
+function selectDate(dateStr) {
+  selectedDateStr = dateStr;
+  renderCalendar(); // re-render to update selected styling
+}
+
+function renderDayDetails() {
+  const container = document.getElementById('dayDetailsContainer');
+  if (!selectedDateStr) {
+    container.innerHTML = '';
+    return;
+  }
+  
+  const history = Store.getHistory();
+  const record = history.find(h => h.date === selectedDateStr);
+  
+  if (!record) {
+    container.innerHTML = `<div class="day-empty">这天没有训练记录</div>`;
+    return;
+  }
+  
+  let html = `<div class="day-details"><div class="day-details-title">${selectedDateStr} 训练记录</div>`;
+  
+  for (const part of PARTS) {
+    if (record.parts[part] && record.parts[part].length > 0) {
+      html += `<div style="font-size: 12px; margin-top: 10px; color: var(--text-dim);">${LABELS[part]}</div>`;
+      for (const ex of record.parts[part]) {
+        html += `
+          <div class="day-detail-item">
+            <div class="day-detail-name">${esc(ex.name)}</div>
+            <div class="day-detail-stats">${ex.weight}kg · ${ex.done}/${ex.sets} 组</div>
+          </div>
+        `;
+      }
+    }
+  }
+  
+  html += `</div>`;
+  container.innerHTML = html;
+}
+
+function openStats() {
+  calculateStats();
+  currentCalDate = new Date();
+  selectedDateStr = currentCalDate.toISOString().slice(0,10);
+  renderCalendar();
+  document.getElementById('statsModal').classList.add('open');
+}
+
+function closeStats() {
+  document.getElementById('statsModal').classList.remove('open');
 }
 
 /* ===============================================================
@@ -1949,6 +1954,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   // FAB
   document.getElementById('fabAdd').addEventListener('click', openModal);
   document.getElementById('btnSettings').addEventListener('click', openSettings);
+  document.getElementById('btnStats').addEventListener('click', openStats);
+
+  // Stats Modal
+  document.getElementById('btnCloseStats').addEventListener('click', closeStats);
+  document.getElementById('statsModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeStats();
+  });
+  document.getElementById('btnPrevMonth').addEventListener('click', () => {
+    currentCalDate.setMonth(currentCalDate.getMonth() - 1);
+    renderCalendar();
+  });
+  document.getElementById('btnNextMonth').addEventListener('click', () => {
+    currentCalDate.setMonth(currentCalDate.getMonth() + 1);
+    renderCalendar();
+  });
 
   // Modal
   document.getElementById('modal').addEventListener('click', e => {
