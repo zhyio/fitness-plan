@@ -777,10 +777,11 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin: 0 auto 12px auto;
+  max-width: 280px;
 }
 .calendar-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
 }
 .calendar-nav {
@@ -791,25 +792,27 @@ body {
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
   color: var(--text-primary);
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 12px;
 }
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 2px;
   text-align: center;
-  margin-bottom: 20px;
+  margin: 0 auto 20px auto;
+  max-width: 280px;
 }
 .calendar-day-header {
   font-size: 11px;
   color: var(--text-dim);
-  padding-bottom: 8px;
+  padding-bottom: 4px;
 }
 .calendar-cell {
   aspect-ratio: 1;
@@ -817,8 +820,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  border-radius: 8px;
+  font-size: 12px;
+  border-radius: 6px;
   cursor: pointer;
   position: relative;
   color: var(--text-secondary);
@@ -831,12 +834,12 @@ body {
 .calendar-cell.has-record::after {
   content: '';
   position: absolute;
-  bottom: 4px;
+  bottom: 3px;
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 6px var(--accent-glow);
+  box-shadow: 0 0 4px var(--accent-glow);
 }
 .calendar-cell.selected {
   border-color: var(--accent);
