@@ -472,21 +472,29 @@ body {
   color: var(--accent);
 }
 .tab-icon {
-  width: 24px; height: 24px;
+  width: 25px; height: 25px;
   overflow: visible;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
               filter 0.3s ease;
 }
 .tab-icon .icon-accent {
-  opacity: 0.18;
+  opacity: 0.1;
   transition: opacity 0.3s ease, fill 0.3s ease;
 }
+.tab-icon .icon-cheek {
+  fill: currentColor;
+  opacity: 0.34;
+  transition: opacity 0.3s ease;
+}
 .tab-item.active .tab-icon {
-  transform: translateY(-1px) scale(1.08);
+  transform: translateY(-2px) scale(1.1);
   filter: drop-shadow(0 0 6px var(--accent-glow));
 }
 .tab-item.active .tab-icon .icon-accent {
-  opacity: 0.8;
+  opacity: 0.28;
+}
+.tab-item.active .tab-icon .icon-cheek {
+  opacity: 0.95;
 }
 .tab-label { font-size: 10px; font-weight: 500; }
 
@@ -783,46 +791,51 @@ body {
 <nav class="tab-bar" id="tabBar">
   <div class="tab-indicator" id="tabIndicator"></div>
   <button class="tab-item active" data-tab="chest" id="tab-chest">
-    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <path d="M8 4.8 5.2 7.1 4 12.3l2.1 1.4.8 5.5h10.2l.8-5.5 2.1-1.4-1.2-5.2L16 4.8"/>
-      <path d="M8 5.1c.8 1.5 2.1 2.2 4 2.2s3.2-.7 4-2.2M12 7.5v8.6"/>
-      <path d="M6.8 9.1c1.5-.8 3-.7 4.5.3M17.2 9.1c-1.5-.8-3-.7-4.5.3"/>
-      <path class="icon-accent" fill="currentColor" stroke="none" d="M7.1 8.2c1.5-.8 2.9-.7 4.2.1v4.2c-1.8.5-3.4.2-4.8-.8l.6-3.5Zm9.8 0c-1.5-.8-2.9-.7-4.2.1v4.2c1.8.5 3.4.2 4.8-.8l-.6-3.5Z"/>
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path class="icon-accent" fill="currentColor" stroke="none" d="M8.7 5.8 5.4 8.6l1.7 3.1 1.6-1v7.8h6.6v-7.8l1.6 1 1.7-3.1-3.3-2.8c-.6 1.1-1.7 1.7-3.3 1.7s-2.7-.6-3.3-1.7Z"/>
+      <path d="M8.7 5.8 5.4 8.6l1.7 3.1 1.6-1v7.8h6.6v-7.8l1.6 1 1.7-3.1-3.3-2.8c-.6 1.1-1.7 1.7-3.3 1.7s-2.7-.6-3.3-1.7Z"/>
+      <path d="M12 14.8s-2.2-1.2-2.2-2.5c0-1.3 1.5-1.5 2.2-.4.7-1.1 2.2-.9 2.2.4 0 1.3-2.2 2.5-2.2 2.5Z"/>
     </svg>
     <span class="tab-label">胸部</span>
   </button>
   <button class="tab-item" data-tab="shoulder" id="tab-shoulder">
-    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <path d="M9.1 5.2c.5 1.2 1.4 1.8 2.9 1.8s2.4-.6 2.9-1.8"/>
-      <path d="M9 7.1c-1.3.2-2.5.7-3.6 1.5-1.2.9-1.9 2.1-2.3 3.7l2.5 1.1 1.2 5.4h10.4l1.2-5.4 2.5-1.1c-.4-1.6-1.1-2.8-2.3-3.7-1.1-.8-2.3-1.3-3.6-1.5"/>
-      <path d="M5.3 9.2c.9-.8 2-1.2 3.2-1.2M18.7 9.2c-.9-.8-2-1.2-3.2-1.2"/>
-      <path class="icon-accent" fill="currentColor" stroke="none" d="M5.4 9.6c1-.9 2-1.4 3.3-1.5l.8 3.2-3 2-2-.8.9-2.9Zm13.2 0c-1-.9-2-1.4-3.3-1.5l-.8 3.2 3 2 2-.8-.9-2.9Z"/>
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path class="icon-accent" fill="currentColor" stroke="none" d="M7.8 19.2v-2.6a4.2 4.2 0 0 1 8.4 0v2.6H7.8Z"/>
+      <path d="M5 6.4h14M5 5v2.8M19 5v2.8"/>
+      <circle cx="12" cy="11.2" r="2.35"/>
+      <path d="M9 15.1 6.8 12v-3M15 15.1l2.2-3.1V9M7.8 19.2v-2.6a4.2 4.2 0 0 1 8.4 0v2.6"/>
+      <circle class="icon-cheek" stroke="none" cx="10.9" cy="11.7" r=".42"/>
+      <circle class="icon-cheek" stroke="none" cx="13.1" cy="11.7" r=".42"/>
     </svg>
     <span class="tab-label">肩部</span>
   </button>
   <button class="tab-item" data-tab="legs" id="tab-legs">
-    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <path d="M8 4.2h8l.8 5.2-2.1 4.4.6 5.9h-3L12 14.4l-1.3 5.3h-3l.6-5.9-2.1-4.4L8 4.2Z"/>
-      <path d="M12 4.4v10"/>
-      <path class="icon-accent" fill="currentColor" stroke="none" d="m8.3 5.5 3 .1v7.7l-1.5 3.1-.5-2.8 1-4.3-2.5-1.1.5-2.7Zm7.4 0-3 .1v7.7l1.5 3.1.5-2.8-1-4.3 2.5-1.1-.5-2.7Z"/>
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path class="icon-accent" fill="currentColor" stroke="none" d="M7.2 5.2h9.6l-.6 7.1h-3.3l-.9-2.1-.9 2.1H7.8l-.6-7.1Z"/>
+      <path d="M7.2 5.2h9.6l-.6 7.1h-3.3l-.9-2.1-.9 2.1H7.8l-.6-7.1ZM12 5.5v4.7"/>
+      <path d="M9.4 12.6v3.7l-2 1.4c-.6.4-.3 1.3.4 1.3h3.7M14.6 12.6v3.7l2 1.4c.6.4.3 1.3-.4 1.3h-3.7"/>
+      <path class="icon-cheek" d="M8.2 8h1.1M14.7 8h1.1"/>
     </svg>
     <span class="tab-label">腿部</span>
   </button>
   <button class="tab-item" data-tab="back" id="tab-back">
-    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <path d="M8.5 5.1 5.7 7.4l.6 5 1.5 6.4h8.4l1.5-6.4.6-5-2.8-2.3"/>
-      <path d="M9 5.4c.7.9 1.7 1.4 3 1.4s2.3-.5 3-1.4M12 7.1v11.1"/>
-      <path d="m7 8.8 3.8 3.1-2.1 3.4M17 8.8l-3.8 3.1 2.1 3.4"/>
-      <path class="icon-accent" fill="currentColor" stroke="none" d="M7 8.3c1.3-.8 2.7-.8 4.1-.2v4.7l-2.6 3.6-1-4.2L7 8.3Zm10 0c-1.3-.8-2.7-.8-4.1-.2v4.7l2.6 3.6 1-4.2.5-3.9Z"/>
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path class="icon-accent" fill="currentColor" stroke="none" d="M7 10.2A3.2 3.2 0 0 1 10.2 7h3.6a3.2 3.2 0 0 1 3.2 3.2v7.3a1.8 1.8 0 0 1-1.8 1.8H8.8A1.8 1.8 0 0 1 7 17.5v-7.3Z"/>
+      <path d="M9.4 7V6.2c0-.8.7-1.5 1.5-1.5h2.2c.8 0 1.5.7 1.5 1.5V7"/>
+      <rect x="7" y="7" width="10" height="12.3" rx="3"/>
+      <path d="M7 11H5.8v4.6M17 11h1.2v4.6M9.7 13.2h4.6v3H9.7z"/>
+      <circle class="icon-cheek" stroke="none" cx="10.4" cy="10.7" r=".42"/>
+      <circle class="icon-cheek" stroke="none" cx="13.6" cy="10.7" r=".42"/>
     </svg>
     <span class="tab-label">背部</span>
   </button>
   <button class="tab-item" data-tab="history" id="tab-history">
-    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <rect x="4" y="4.5" width="16" height="15.5" rx="3"/>
-      <path d="M8 3v3.5M16 3v3.5M4 9h16"/>
-      <path class="icon-accent" fill="currentColor" stroke="none" d="M8 11.2h3v3H8zM13 11.2h3v3h-3zM8 15.6h3v2.2H8z"/>
-      <path d="m13 16.1 1.1 1.1 2.3-2.5"/>
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <rect class="icon-accent" fill="currentColor" stroke="none" x="4.7" y="5.5" width="14.6" height="14" rx="3"/>
+      <rect x="4.7" y="5.5" width="14.6" height="14" rx="3"/>
+      <path d="M8.5 4v3M15.5 4v3M4.7 9.5h14.6"/>
+      <path d="m9 14.1 2 2 4.2-4.1"/>
+      <circle class="icon-cheek" stroke="none" cx="16.5" cy="17" r=".48"/>
     </svg>
     <span class="tab-label">历史</span>
   </button>
