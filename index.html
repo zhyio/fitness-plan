@@ -1635,27 +1635,29 @@ function toggleSet(exIdx, setIdx) {
       const old = ex.completedSets || [];
       ex.completedSets = Array(totalSets).fill(false);
       for(let j=0; j<Math.min(totalSets, old.length); j++) ex.completedSets[j] = old[j];
+  const isCurrentlyDone = ex.completedSets[setIdx];
+  let targetIdx = setIdx;
+  
+  if (!isCurrentlyDone) {
+    // 点击未点亮的组，总是点亮第一个未点亮的组
+    targetIdx = ex.completedSets.indexOf(false);
+  } else {
+    // 点击已点亮的组，总是熄灭最后一个已点亮的组
+    targetIdx = ex.completedSets.lastIndexOf(true);
   }
   
-  const isCurrentlyDone = ex.completedSets[setIdx];
-  if (!isCurrentlyDone) {
-    // 只能按顺序点亮，不能跳着点
-    if (setIdx > 0 && !ex.completedSets[setIdx - 1]) return;
-  } else {
-    // 只能从后往前取消，不能跳着取消
-    if (setIdx < totalSets - 1 && ex.completedSets[setIdx + 1]) return;
-  }
+  if (targetIdx === -1) return;
 
-  ex.completedSets[setIdx] = !ex.completedSets[setIdx];
+  ex.completedSets[targetIdx] = !ex.completedSets[targetIdx];
   Store.save();
 
   const card = document.querySelectorAll('.tab-panel.active .exercise-card')[exIdx];
   if (!card) return;
 
-  const circle = card.querySelectorAll('.set-circle')[setIdx];
-  const justDone = ex.completedSets[setIdx];
+  const circle = card.querySelectorAll('.set-circle')[targetIdx];
+  const justDone = ex.completedSets[targetIdx];
   circle.classList.toggle('done', justDone);
-  circle.textContent = justDone ? '✓' : (setIdx + 1);
+  circle.textContent = justDone ? '✓' : (targetIdx + 1);
 
   // Pop animation
   circle.style.animation = 'none';
