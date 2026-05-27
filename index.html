@@ -27,6 +27,7 @@
   --accent-shoulder: #ff9933;
   --accent-legs: #00e676;
   --accent-back: #2979ff;
+  --accent-abs: #00d7c7;
   --accent-history: #e040fb;
   --accent: var(--accent-chest);
   --accent-glow: rgba(255, 51, 102, 0.25);
@@ -152,9 +153,9 @@ body {
   50%  { transform: scale(1.25); }
   100% { transform: scale(1); }
 }
-@keyframes glowBreath {
-  0%, 100% { opacity: 0.3; }
-  50%      { opacity: 0.7; }
+@keyframes emptyArtworkFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-5px) scale(1.02); }
 }
 @keyframes slideRight {
   from { opacity: 0; transform: translateX(-20px); }
@@ -215,6 +216,31 @@ body {
 }
 .progress-text.pop {
   animation: numberPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.settings-trigger {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 11px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.settings-trigger svg { width: 18px; height: 18px; }
+.settings-trigger:active {
+  color: var(--accent);
+  border-color: var(--accent-glow);
+  background: var(--accent-glow);
+  transform: scale(0.94);
 }
 
 /* ========== PROGRESS BAR (LIQUID STYLE) ========== */
@@ -411,11 +437,15 @@ body {
   color: var(--text-dim);
   animation: fadeSlideIn 0.5s ease-out;
 }
-.empty-icon {
-  font-size: 56px;
-  margin-bottom: 16px;
-  opacity: 0.35;
-  animation: glowBreath 3s infinite ease-in-out;
+.empty-illustration {
+  display: block;
+  width: min(132px, 38vw);
+  height: auto;
+  margin: 0 auto 18px;
+  filter: drop-shadow(0 12px 22px rgba(224, 64, 251, 0.18));
+  animation: emptyArtworkFloat 4s infinite ease-in-out;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .empty-state p {
   font-size: 14px;
@@ -576,6 +606,12 @@ body {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 .form-input::placeholder { color: var(--text-dim); }
+.template-helper {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -603,6 +639,114 @@ body {
   box-shadow: 0 4px 20px var(--accent-glow);
 }
 .btn-save:active { transform: scale(0.96); }
+
+/* ========== SETTINGS / EXERCISE LIBRARY ========== */
+.settings-sheet { min-height: min(64dvh, 520px); }
+.settings-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.settings-top .modal-title { margin-bottom: 0; }
+.sheet-close {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-secondary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.settings-copy {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+  margin-bottom: 16px;
+}
+.settings-parts {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  margin-bottom: 4px;
+  scrollbar-width: none;
+}
+.settings-parts::-webkit-scrollbar { display: none; }
+.settings-part-btn {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  padding: 7px 13px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.settings-part-btn.active {
+  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 3px 14px var(--accent-glow);
+}
+.library-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  margin-bottom: 8px;
+}
+.library-item-main { flex: 1; min-width: 0; }
+.library-item-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.library-item-detail {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.library-actions {
+  display: flex;
+  gap: 6px;
+}
+.library-use,
+.library-remove {
+  border: none;
+  border-radius: 9px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.library-use {
+  color: var(--accent);
+  background: var(--accent-glow);
+}
+.library-remove {
+  color: #ff8094;
+  background: rgba(255, 51, 102, 0.1);
+}
+.library-empty {
+  padding: 44px 18px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.65;
+}
 
 /* ========== HISTORY PANEL ========== */
 .history-stats {
@@ -773,7 +917,15 @@ body {
 <header class="app-header">
   <div class="header-top">
     <h1 class="header-title" id="headerTitle">胸部</h1>
-    <span class="progress-text" id="progressText">0/0</span>
+    <div class="header-actions">
+      <span class="progress-text" id="progressText">0/0</span>
+      <button class="settings-trigger" id="btnSettings" aria-label="动作设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2Z"/>
+          <path d="M19 12a7.1 7.1 0 0 0-.1-1.2l2-1.5-2-3.4-2.4 1a7.4 7.4 0 0 0-2-1.2L14.2 3h-4.1l-.4 2.7a7.4 7.4 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.5A7.1 7.1 0 0 0 5.2 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.4-1a7.4 7.4 0 0 0 2 1.2l.4 2.7h4.1l.4-2.7a7.4 7.4 0 0 0 2-1.2l2.4 1 2-3.4-2-1.5c.1-.4.1-.8.1-1.2Z"/>
+        </svg>
+      </button>
+    </div>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
 </header>
@@ -784,6 +936,7 @@ body {
   <section class="tab-panel" data-part="shoulder" id="panel-shoulder"></section>
   <section class="tab-panel" data-part="legs" id="panel-legs"></section>
   <section class="tab-panel" data-part="back" id="panel-back"></section>
+  <section class="tab-panel" data-part="abs" id="panel-abs"></section>
   <section class="tab-panel" data-part="history" id="panel-history"></section>
 </main>
 
@@ -832,6 +985,14 @@ body {
     </svg>
     <span class="tab-label">背部</span>
   </button>
+  <button class="tab-item" data-tab="abs" id="tab-abs">
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path class="icon-accent" fill="currentColor" stroke="none" d="M8 7.2c0-1.4 1.2-2.5 2.6-2.5h2.8c1.4 0 2.6 1.1 2.6 2.5v10.3c0 1-.8 1.8-1.8 1.8H9.8c-1 0-1.8-.8-1.8-1.8V7.2Z"/>
+      <path d="M9 5.7c.7.7 1.7 1.1 3 1.1s2.3-.4 3-1.1M8 8.3v9.2c0 1 .8 1.8 1.8 1.8h4.4c1 0 1.8-.8 1.8-1.8V8.3"/>
+      <path d="M10 10.2h1.3M12.7 10.2H14M10 13h1.3M12.7 13H14M10 15.8h1.3M12.7 15.8H14"/>
+    </svg>
+    <span class="tab-label">腹部</span>
+  </button>
   <button class="tab-item" data-tab="history" id="tab-history">
     <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
       <rect class="icon-accent" fill="currentColor" stroke="none" x="4.7" y="5.5" width="14.6" height="14" rx="3"/>
@@ -849,6 +1010,13 @@ body {
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <h2 class="modal-title">添加动作</h2>
+    <div class="form-group">
+      <label class="form-label">从动作记录选择</label>
+      <select class="form-input" id="templateSelect">
+        <option value="">选择已添加过的动作</option>
+      </select>
+      <div class="template-helper">选择后自动带入最近一次组数、次数和重量</div>
+    </div>
     <div class="form-group">
       <label class="form-label">动作名称</label>
       <input class="form-input" type="text" id="inputName" list="exerciseList" placeholder="例如：卧推" autocomplete="off">
@@ -872,6 +1040,20 @@ body {
   </div>
 </div>
 
+<!-- Settings / Exercise Library -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-sheet settings-sheet">
+    <div class="modal-handle"></div>
+    <div class="settings-top">
+      <h2 class="modal-title">动作设置</h2>
+      <button class="sheet-close" id="btnCloseSettings" aria-label="关闭设置">&times;</button>
+    </div>
+    <p class="settings-copy">这里管理添加过的动作记录。删除记录不会影响今天已经添加的训练。</p>
+    <div class="settings-parts" id="settingsParts"></div>
+    <div id="libraryList"></div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -885,14 +1067,42 @@ const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_U
 if (!supabaseClient) console.warn('Supabase SDK not loaded — running in offline mode.');
 const USER_ID = 'default_user';
 
-const PARTS = ['chest', 'shoulder', 'legs', 'back'];
-const ALL_TABS = ['chest', 'shoulder', 'legs', 'back', 'history'];
-const LABELS = { chest:'胸部', shoulder:'肩部', legs:'腿部', back:'背部', history:'历史' };
-const COLORS = { chest:'#ff3366', shoulder:'#ff9933', legs:'#00e676', back:'#6366f1', history:'#e040fb' };
+const PARTS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
+const ALL_TABS = ['chest', 'shoulder', 'legs', 'back', 'abs', 'history'];
+const LABELS = { chest:'胸部', shoulder:'肩部', legs:'腿部', back:'背部', abs:'腹部', history:'历史' };
+const COLORS = { chest:'#ff3366', shoulder:'#ff9933', legs:'#00e676', back:'#6366f1', abs:'#00d7c7', history:'#e040fb' };
 const GLOWS  = {
   chest:'rgba(255,51,102,0.2)', shoulder:'rgba(255,153,51,0.2)',
-  legs:'rgba(0,230,118,0.2)', back:'rgba(99,102,241,0.2)', history:'rgba(224,64,251,0.2)'
+  legs:'rgba(0,230,118,0.2)', back:'rgba(99,102,241,0.2)',
+  abs:'rgba(0,215,199,0.2)', history:'rgba(224,64,251,0.2)'
 };
+
+function emptyWorkoutPlan() {
+  return { chest:[], shoulder:[], legs:[], back:[], abs:[] };
+}
+
+function normalizeTemplates(source = {}) {
+  const normalized = {};
+  for (const part of PARTS) {
+    const templates = Array.isArray(source[part]) ? source[part] : [];
+    normalized[part] = [];
+    for (const item of templates) {
+      const raw = typeof item === 'string' ? { name: item } : (item || {});
+      const name = String(raw.name || '').trim();
+      if (!name) continue;
+      const template = {
+        name,
+        sets: Math.max(1, parseInt(raw.sets) || 4),
+        reps: Math.max(1, parseInt(raw.reps) || 12),
+        weight: Math.max(0, parseFloat(raw.weight) || 0)
+      };
+      const existing = normalized[part].findIndex(t => t.name.toLowerCase() === name.toLowerCase());
+      if (existing >= 0) normalized[part][existing] = template;
+      else normalized[part].push(template);
+    }
+  }
+  return normalized;
+}
 
 /* ===============================================================
    IndexedDB CACHE LAYER
@@ -969,8 +1179,8 @@ const IDBCache = {
    DATA STORE (IndexedDB + Supabase hybrid)
    =============================================================== */
 const Store = {
-  _d: { chest:[], shoulder:[], legs:[], back:[] },
-  _custom: {},
+  _d: emptyWorkoutPlan(),
+  _custom: normalizeTemplates(),
   _lastReset: '',
   _history: [],
 
@@ -979,8 +1189,8 @@ const Store = {
     try {
       const cached = await IDBCache.get('fitness_data');
       if (cached) {
-        this._d = { chest:[], shoulder:[], legs:[], back:[], ...(cached.exercises || {}) };
-        this._custom = cached.custom_exercises || {};
+        this._d = { ...emptyWorkoutPlan(), ...(cached.exercises || {}) };
+        this._custom = normalizeTemplates(cached.custom_exercises);
         this._lastReset = cached.last_reset || '';
       }
       this._history = await IDBCache.getAllHistory();
@@ -999,8 +1209,8 @@ const Store = {
 
       if (data) {
         // Supabase 数据作为权威来源
-        this._d = { chest:[], shoulder:[], legs:[], back:[], ...(data.exercises || {}) };
-        this._custom = data.custom_exercises || this._custom;
+        this._d = { ...emptyWorkoutPlan(), ...(data.exercises || {}) };
+        this._custom = data.custom_exercises ? normalizeTemplates(data.custom_exercises) : this._custom;
         this._lastReset = data.last_reset || this._lastReset;
         // 同步到 IndexedDB
         await this._saveToIDB();
@@ -1039,14 +1249,24 @@ const Store = {
     }
   },
 
-  getCustom(part) { return this._custom[part] || []; },
+  getTemplates(part) { return this._custom[part] || []; },
 
-  addCustom(part, name) {
+  upsertTemplate(part, exercise) {
     if (!this._custom[part]) this._custom[part] = [];
-    if (!this._custom[part].includes(name)) {
-      this._custom[part].push(name);
-      this.save();
-    }
+    const template = {
+      name: exercise.name,
+      sets: exercise.sets,
+      reps: exercise.reps,
+      weight: exercise.weight
+    };
+    const idx = this._custom[part].findIndex(t => t.name.toLowerCase() === exercise.name.toLowerCase());
+    if (idx >= 0) this._custom[part][idx] = template;
+    else this._custom[part].unshift(template);
+  },
+
+  removeTemplate(part, name) {
+    this._custom[part] = this.getTemplates(part).filter(t => t.name !== name);
+    this.save();
   },
 
   getLastReset() { return this._lastReset; },
@@ -1128,6 +1348,7 @@ function checkReset() {
    UI: ACCENT & TAB
    =============================================================== */
 let activeTab = 'chest';
+let settingsPart = 'chest';
 
 function setAccent(part) {
   const s = document.documentElement.style;
@@ -1185,6 +1406,10 @@ function esc(s) {
   return d.innerHTML;
 }
 
+function escAttr(s) {
+  return esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function renderExercises(part) {
   const panel = document.getElementById('panel-' + part);
   const exercises = Store.load()[part];
@@ -1192,7 +1417,7 @@ function renderExercises(part) {
   if (!exercises || !exercises.length) {
     panel.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">🏋️</div>
+        <img class="empty-illustration" src="assets/illustrations/empty-workout-illustration.webp" width="292" height="320" alt="" draggable="false">
         <p>还没有训练动作<br>点击 <strong>+</strong> 添加</p>
       </div>`;
     return;
@@ -1359,7 +1584,8 @@ function renderHistory(filter = 'all') {
     { key: 'chest', label: '胸部' },
     { key: 'shoulder', label: '肩部' },
     { key: 'legs', label: '腿部' },
-    { key: 'back', label: '背部' }
+    { key: 'back', label: '背部' },
+    { key: 'abs', label: '腹部' }
   ];
 
   let html = `
@@ -1576,12 +1802,30 @@ function showToast(msg) {
 /* ===============================================================
    MODAL
    =============================================================== */
+function populateTemplateChoices(part) {
+  const templates = Store.getTemplates(part);
+  const select = document.getElementById('templateSelect');
+  const list = document.getElementById('exerciseList');
+  select.innerHTML = `<option value="">选择已添加过的动作</option>${templates.map(t =>
+    `<option value="${escAttr(t.name)}">${esc(t.name)} · ${t.reps}次 × ${t.sets}组 · ${t.weight}kg</option>`
+  ).join('')}`;
+  list.innerHTML = templates.map(t => `<option value="${escAttr(t.name)}">`).join('');
+  select.value = '';
+}
+
+function applyTemplate(name) {
+  const template = Store.getTemplates(activeTab).find(t => t.name === name);
+  if (!template) return;
+  document.getElementById('inputName').value = template.name;
+  document.getElementById('inputSets').value = template.sets;
+  document.getElementById('inputReps').value = template.reps;
+  document.getElementById('inputWeight').value = template.weight;
+}
+
 function openModal() {
   const modal = document.getElementById('modal');
   modal.classList.add('open');
-  const list = document.getElementById('exerciseList');
-  const customs = Store.getCustom(activeTab);
-  list.innerHTML = customs.map(n => `<option value="${esc(n)}">`).join('');
+  populateTemplateChoices(activeTab);
   setTimeout(() => document.getElementById('inputName').focus(), 420);
 }
 
@@ -1600,19 +1844,70 @@ function saveExercise() {
   }
 
   const data = Store.load();
-  data[activeTab].push({
+  const exercise = {
     id: Date.now().toString(36),
     name, sets, reps, weight,
     completedSets: Array(sets).fill(false)
-  });
+  };
+  data[activeTab].push(exercise);
+  Store.upsertTemplate(activeTab, exercise);
   Store.save();
-  Store.addCustom(activeTab, name);
 
   document.getElementById('inputName').value = '';
+  document.getElementById('templateSelect').value = '';
   closeModal();
   renderExercises(activeTab);
   updateProgress(activeTab);
   showToast('✅ 已添加');
+}
+
+/* ===============================================================
+   SETTINGS: EXERCISE LIBRARY
+   =============================================================== */
+function renderSettings() {
+  const parts = document.getElementById('settingsParts');
+  const list = document.getElementById('libraryList');
+  parts.innerHTML = PARTS.map(part =>
+    `<button class="settings-part-btn${part === settingsPart ? ' active' : ''}" data-settings-part="${part}">${LABELS[part]}</button>`
+  ).join('');
+
+  const templates = Store.getTemplates(settingsPart);
+  if (!templates.length) {
+    list.innerHTML = `<div class="library-empty">暂无${LABELS[settingsPart]}动作记录<br>添加动作后会自动保存在这里</div>`;
+    return;
+  }
+  list.innerHTML = templates.map(template => `
+    <div class="library-item">
+      <div class="library-item-main">
+        <span class="library-item-name">${esc(template.name)}</span>
+        <span class="library-item-detail">${template.reps} 次 × ${template.sets} 组 · ${template.weight}kg</span>
+      </div>
+      <div class="library-actions">
+        <button class="library-use" data-template-use="${encodeURIComponent(template.name)}">套用</button>
+        <button class="library-remove" data-template-remove="${encodeURIComponent(template.name)}">删除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openSettings() {
+  settingsPart = PARTS.includes(activeTab) ? activeTab : 'chest';
+  setAccent(settingsPart);
+  renderSettings();
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+  setAccent(activeTab);
+}
+
+function useTemplateFromSettings(name) {
+  closeSettings();
+  if (activeTab !== settingsPart) switchTab(settingsPart);
+  openModal();
+  document.getElementById('templateSelect').value = name;
+  applyTemplate(name);
 }
 
 /* ===============================================================
@@ -1653,12 +1948,43 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // FAB
   document.getElementById('fabAdd').addEventListener('click', openModal);
+  document.getElementById('btnSettings').addEventListener('click', openSettings);
 
   // Modal
   document.getElementById('modal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });
   document.getElementById('btnSave').addEventListener('click', saveExercise);
+  document.getElementById('templateSelect').addEventListener('change', e => {
+    if (e.target.value) applyTemplate(e.target.value);
+  });
+
+  // Settings / remembered exercise templates
+  document.getElementById('btnCloseSettings').addEventListener('click', closeSettings);
+  document.getElementById('settingsModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeSettings();
+  });
+  document.getElementById('settingsParts').addEventListener('click', e => {
+    const btn = e.target.closest('[data-settings-part]');
+    if (!btn) return;
+    settingsPart = btn.dataset.settingsPart;
+    setAccent(settingsPart);
+    renderSettings();
+  });
+  document.getElementById('libraryList').addEventListener('click', e => {
+    const use = e.target.closest('[data-template-use]');
+    if (use) {
+      useTemplateFromSettings(decodeURIComponent(use.dataset.templateUse));
+      return;
+    }
+    const remove = e.target.closest('[data-template-remove]');
+    if (!remove) return;
+    const name = decodeURIComponent(remove.dataset.templateRemove);
+    if (!confirm(`删除动作记录「${name}」？`)) return;
+    Store.removeTemplate(settingsPart, name);
+    renderSettings();
+    showToast('已删除动作记录');
+  });
 
   // Keyboard nav in form
   document.getElementById('inputName').addEventListener('keydown', e => {

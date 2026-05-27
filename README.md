@@ -4,8 +4,9 @@
 
 ## ✨ 核心功能
 * **赛博朋克深色美学**：全局径向渐变背景、霓虹色彩呼吸动效与玻璃态拟物 UI 结合，点击拥有弹簧般的真实阻尼回馈。
-* **分部位记录**：通过底部固定 Tab 快速切换 胸、肩、腿、背 的每日动作计划。
-* **自动记忆库**：填入过的自定义新动作会被记忆，下次使用时在输入框下方自动补全，极大提升输入效率。
+* **分部位记录**：通过底部固定 Tab 快速切换胸、肩、腿、背、腹的每日动作计划。
+* **动作记录复用**：添加过的动作会保存最近一次组数、次数和重量，之后可在添加面板的下拉框中快速套用。
+* **动作管理**：通过页面顶部设置入口按部位查看、套用或删除动作记录，不影响今天已安排的训练。
 * **智能隔夜重置**：每日凌晨 2:00 根据时区界限，将当天的各组圆圈状态丝滑归零，免除每日手动建表的烦恼。
 * **无缝云端同步**：基于 Supabase 云引擎与乐观更新 (Optimistic UI) 理念，点亮圆环无延迟的同时，能跨越手机、电脑实现毫秒级数据同步保护。
 
@@ -21,12 +22,13 @@
   create table public.fitness_data (
     id uuid default gen_random_uuid() primary key,
     user_id text not null default 'default_user',
-    exercises jsonb not null default '{"chest":[], "shoulder":[], "legs":[], "back":[]}'::jsonb,
+    exercises jsonb not null default '{"chest":[], "shoulder":[], "legs":[], "back":[], "abs":[]}'::jsonb,
     custom_exercises jsonb not null default '{}'::jsonb,
     last_reset text,
     updated_at timestamp with time zone default now()
   );
   ```
+  `custom_exercises` 用于保存每个部位的动作记录模板，包含名称、组数、次数和重量。
 
 ## 📱 移动端沉浸体验提示
 建议在手机的浏览器（Safari 或 Chrome）中打开网页后，选择底部的 **"添加到主屏幕" (Add to Home Screen)**。
