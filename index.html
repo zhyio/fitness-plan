@@ -1,5 +1,17 @@
-
-/* Advanced Neumorphic & Glow UI */
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="description" content="极简云同步健身计划 — 记录训练、跟踪进度、查看历史">
+<title>健身计划 | Fitness Plan</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ========== DESIGN TOKENS ========== */
 :root {
   --bg-primary: #0a0a0f;
   --bg-card: rgba(20, 20, 30, 0.6);
@@ -12,414 +24,725 @@
   --accent-shoulder: #ff9933;
   --accent-legs: #00e676;
   --accent-back: #2979ff;
+  --accent-history: #e040fb;
   --accent: var(--accent-chest);
-  --accent-glow: rgba(255, 51, 102, 0.3);
+  --accent-glow: rgba(255, 51, 102, 0.25);
   --radius: 20px;
   --radius-sm: 12px;
+  --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --tab-h: 70px;
-  --header-h: 110px;
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --tab-h: 64px;
 }
 
+/* ========== RESET ========== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ========== GLOBAL ========== */
 body {
-  background: radial-gradient(circle at center 0%, #1a1a2e 0%, var(--bg-primary) 80%);
-  background-attachment: fixed;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, 'SF Pro Display', 'PingFang SC', system-ui, sans-serif;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 16px);
+  position: relative;
 }
 
-@keyframes slideUpFade {
-  0% { opacity: 0; transform: translateY(30px) scale(0.95); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
+/* ========== FLOATING ORBS BACKGROUND ========== */
+.bg-orbs {
+  position: fixed; inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.13;
+  will-change: transform;
+}
+.bg-orb:nth-child(1) {
+  width: min(350px, 80vw); height: min(350px, 80vw);
+  background: var(--accent-chest);
+  top: -10%; left: -10%;
+  animation: orbFloat1 28s infinite ease-in-out;
+}
+.bg-orb:nth-child(2) {
+  width: min(280px, 65vw); height: min(280px, 65vw);
+  background: var(--accent-back);
+  bottom: 15%; right: -15%;
+  animation: orbFloat2 32s infinite ease-in-out;
+}
+.bg-orb:nth-child(3) {
+  width: min(220px, 55vw); height: min(220px, 55vw);
+  background: var(--accent-legs);
+  top: 45%; left: 25%;
+  animation: orbFloat3 24s infinite ease-in-out;
+}
+@keyframes orbFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(40px, 60px) scale(1.05); }
+  50% { transform: translate(-30px, 90px) scale(0.95); }
+  75% { transform: translate(50px, 25px) scale(1.02); }
+}
+@keyframes orbFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-50px, -40px) scale(1.08); }
+  50% { transform: translate(35px, -70px) scale(0.92); }
+  75% { transform: translate(-25px, 50px) scale(1.04); }
+}
+@keyframes orbFloat3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(70px, -50px) scale(1.1); }
+  66% { transform: translate(-40px, 60px) scale(0.9); }
 }
 
+/* ========== KEYFRAME ANIMATIONS ========== */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: scale(0.92) translateY(16px); filter: blur(4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+@keyframes pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+@keyframes fabIn {
+  from { transform: scale(0) rotate(-120deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0); opacity: 1; }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 @keyframes neonPulse {
-  0% { box-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow); }
-  50% { box-shadow: 0 0 20px var(--accent-glow), 0 0 40px var(--accent-glow); }
-  100% { box-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow); }
+  0%, 100% { box-shadow: 0 4px 24px var(--accent-glow); }
+  50%      { box-shadow: 0 4px 36px var(--accent-glow), 0 0 60px var(--accent-glow); }
+}
+@keyframes bounceIn {
+  0%   { transform: scale(0.3); opacity: 0; }
+  50%  { transform: scale(1.08); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes rippleAnim {
+  to { transform: scale(2.5); opacity: 0; }
+}
+@keyframes particleBurstAnim {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+}
+@keyframes numberPop {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+@keyframes glowBreath {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 0.7; }
+}
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
+/* ========== LOADER ========== */
+.loader-overlay {
+  position: fixed; inset: 0;
+  background: var(--bg-primary);
+  z-index: 9999;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.4s ease-out;
+}
+.spinner {
+  width: 44px; height: 44px;
+  border: 3px solid rgba(255,255,255,0.08);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 16px;
+}
+.loader-text {
+  color: var(--text-secondary);
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+/* ========== HEADER ========== */
+.app-header {
+  position: sticky; top: 0; z-index: 50;
+  padding: calc(var(--safe-top) + 12px) 20px 12px;
+  background: linear-gradient(to bottom, var(--bg-primary) 50%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.header-top {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.header-title {
+  font-size: clamp(22px, 6vw, 28px);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, var(--accent), var(--text-primary) 70%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.progress-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.3s;
+}
+.progress-text.pop {
+  animation: numberPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ========== PROGRESS BAR (LIQUID STYLE) ========== */
+.progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+  position: relative;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent), white 25%));
+  box-shadow: 0 0 14px var(--accent-glow);
+  width: 0%;
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+.progress-fill::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(0,0,0,0.15) 100%);
+}
+.progress-fill::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+/* ========== TAB PANELS ========== */
+.tab-panels {
+  padding: 4px clamp(12px, 4vw, 20px) 16px;
+  position: relative;
+  z-index: 1;
+}
+.tab-panel {
+  display: none;
+  animation: fadeSlideIn 0.35s ease-out;
+}
+.tab-panel.active {
+  display: block;
+}
+
+/* ========== EXERCISE CARDS ========== */
 .exercise-card {
   background: var(--bg-card);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-card);
   border-radius: var(--radius);
-  padding: 18px;
-  margin-bottom: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  padding: clamp(14px, 4vw, 20px);
+  margin-bottom: 12px;
+  animation: cardIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
   position: relative;
   overflow: hidden;
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+  touch-action: manipulation;
 }
-
 .exercise-card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; width: 4px; height: 100%;
+  top: 0; left: 0;
+  width: 4px; height: 100%;
   background: var(--accent);
-  opacity: 0.3;
-  transition: opacity 0.3s;
+  opacity: 0.25;
+  transition: opacity 0.4s, box-shadow 0.4s;
+}
+.exercise-card:active {
+  background: var(--bg-card-hover);
+  transform: scale(0.985);
+}
+.exercise-card.all-done {
+  border-color: var(--accent);
+  box-shadow: 0 0 24px var(--accent-glow), inset 0 0 30px var(--accent-glow);
 }
 .exercise-card.all-done::before {
   opacity: 1;
-  box-shadow: 0 0 15px var(--accent);
+  box-shadow: 0 0 18px var(--accent);
 }
-.exercise-card.all-done {
-  border-color: var(--accent-glow);
-  background: linear-gradient(145deg, rgba(255,255,255,0.03) 0%, var(--accent-glow) 200%);
-}
-
-.set-circle {
-  width: 42px; height: 42px;
-  border-radius: 12px;
-  border: 2px solid rgba(255,255,255,0.1);
-  background: rgba(0,0,0,0.3);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-  font-size: 14px;
-}
-.set-circle.done {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  box-shadow: 0 4px 15px var(--accent-glow), inset 0 2px 4px rgba(255,255,255,0.3);
-  animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+.exercise-card.celebrate {
+  animation: bounceIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.fab {
-  width: 60px; height: 60px;
-  font-size: 32px;
-  animation: neonPulse 2s infinite;
-}
-
-.tab-bar {
-  background: rgba(10,10,15,0.6);
-  border-top: 1px solid rgba(255,255,255,0.03);
-}
-
-.tab-item.active {
-  transform: translateY(-4px);
-}
-.tab-item.active .tab-icon {
-  filter: drop-shadow(0 0 8px var(--accent-glow));
-}
-
-*,*::before,*::after { margin:0; padding:0; box-sizing:border-box }
-
-body {
-  background: radial-gradient(circle at center top, #161622 0%, var(--bg-primary) 100%);
-  color: var(--text-primary);
-  font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
-  min-height: 100dvh;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  padding-bottom: calc(var(--tab-h) + var(--safe-bottom) + 20px);
-}
-
-@keyframes glowFlow {
-  0% { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
-}
-@keyframes fadeSlideIn {
-  from { opacity:0; transform:translateY(14px) }
-  to   { opacity:1; transform:translateY(0) }
-}
-@keyframes cardIn {
-  from { opacity:0; transform:scale(0.96) translateY(10px) }
-  to   { opacity:1; transform:scale(1) translateY(0) }
-}
-@keyframes pop {
-  0%   { transform:scale(1) }
-  40%  { transform:scale(1.35) }
-  100% { transform:scale(1) }
-}
-@keyframes fabIn {
-  from { transform:scale(0) rotate(-90deg) }
-  to   { transform:scale(1) rotate(0) }
-}
-@keyframes shimmer {
-  from { background-position: -200% 0 }
-  to   { background-position: 200% 0 }
-}
-@keyframes spin {
-  to { transform: rotate(360deg) }
-}
-
-/* Loader */
-.loader-overlay {
-  position: fixed; inset: 0; background: var(--bg-primary); z-index: 9999;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  transition: opacity 0.3s;
-}
-.spinner {
-  width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
-  border-top-color: var(--accent); border-radius: 50%;
-  animation: spin 1s linear infinite; margin-bottom: 16px;
-}
-
-/* Header */
-.app-header {
-  position: sticky; top: 0; z-index: 50;
-  padding: 16px 20px 12px;
-  background: linear-gradient(to bottom, var(--bg-primary) 60%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-.header-top {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 10px;
-}
-.header-title {
-  font-size: 26px; font-weight: 700; letter-spacing: -0.5px;
-  background: linear-gradient(135deg, var(--accent), var(--text-primary));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-  transition: all 0.4s;
-}
-.progress-text {
-  font-size: 13px; color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
-}
-.progress-bar {
-  height: 4px; border-radius: 2px;
-  background: rgba(255,255,255,0.06);
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%; border-radius: 2px;
-  background: var(--accent);
-  box-shadow: 0 0 10px var(--accent-glow);
-  width: 0%; transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1);
-  position: relative;
-}
-.progress-fill::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite linear;
-}
-
-/* Tab Panels */
-.tab-panels { padding: 4px 16px 16px; }
-.tab-panel { display:none; animation: fadeSlideIn 0.3s ease-out }
-.tab-panel.active { display:block }
-
-/* Exercise Cards */
-.exercise-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 12px;
-  animation: cardIn 0.35s ease-out backwards;
-  transition: background 0.2s, border-color 0.2s;
-}
-.exercise-card:active { background: var(--bg-card-hover) }
-.exercise-card.all-done {
-  border-color: var(--accent);
-  box-shadow: 0 0 20px var(--accent-glow);
-}
 .card-header {
-  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  display: flex; align-items: center;
+  gap: 8px; margin-bottom: 6px;
 }
 .card-name {
-  flex: 1; font-size: 16px; font-weight: 600;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1;
+  font-size: clamp(15px, 4vw, 17px);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .card-weight {
   font-size: 13px; font-weight: 600;
   color: var(--accent);
   background: var(--accent-glow);
-  padding: 2px 8px; border-radius: 6px;
+  padding: 3px 10px;
+  border-radius: 8px;
   white-space: nowrap;
 }
 .btn-delete {
-  background: none; border: none; color: var(--text-dim);
-  font-size: 20px; cursor: pointer; padding: 0 4px;
-  transition: color 0.2s;
-  -webkit-tap-highlight-color: transparent;
+  background: none; border: none;
+  color: var(--text-dim);
+  font-size: 22px; cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+  touch-action: manipulation;
 }
-.btn-delete:hover { color: #ef4444 }
+.btn-delete:hover, .btn-delete:active {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
 .card-info {
-  font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
 }
 
-/* Set Circles */
+/* ========== SET CIRCLES ========== */
 .set-row {
-  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(6px, 2vw, 10px);
+  margin-bottom: 12px;
 }
 .set-circle {
-  width: 38px; height: 38px;
+  width: clamp(36px, 10vw, 44px);
+  height: clamp(36px, 10vw, 44px);
   border-radius: 50%;
   border: 2px solid var(--accent);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  font-size: 13px; font-weight: 600;
+  font-size: clamp(12px, 3.5vw, 14px);
+  font-weight: 600;
   color: var(--text-secondary);
-  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
-  -webkit-tap-highlight-color: transparent;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   touch-action: manipulation;
   user-select: none;
   position: relative;
+  overflow: hidden;
 }
 .set-circle.done {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
+  box-shadow: 0 4px 16px var(--accent-glow);
 }
+/* Ripple inside circle */
+.set-circle .ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  transform: scale(0);
+  animation: rippleAnim 0.5s ease-out forwards;
+  pointer-events: none;
+}
+
 .card-footer {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center;
+  justify-content: space-between;
 }
 .card-progress {
-  font-size: 12px; color: var(--text-secondary);
+  font-size: 12px;
+  color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
 }
 .card-pct {
-  font-size: 12px; font-weight: 600; color: var(--accent);
+  font-size: 12px; font-weight: 600;
+  color: var(--accent);
 }
 
-/* Empty State */
+/* ========== PARTICLE BURST ========== */
+.particle-burst {
+  position: fixed;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  animation: particleBurstAnim 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+/* ========== EMPTY STATE ========== */
 .empty-state {
-  text-align: center; padding: 60px 20px;
+  text-align: center;
+  padding: 60px 20px;
   color: var(--text-dim);
+  animation: fadeSlideIn 0.5s ease-out;
 }
 .empty-icon {
-  font-size: 48px; margin-bottom: 12px; opacity: 0.4;
+  font-size: 56px;
+  margin-bottom: 16px;
+  opacity: 0.35;
+  animation: glowBreath 3s infinite ease-in-out;
 }
-.empty-state p { font-size: 14px; line-height: 1.6 }
+.empty-state p {
+  font-size: 14px;
+  line-height: 1.7;
+}
 
-/* FAB */
+/* ========== FAB ========== */
 .fab {
   position: fixed;
   bottom: calc(var(--tab-h) + var(--safe-bottom) + 18px);
-  right: 20px;
-  width: 54px; height: 54px;
+  right: clamp(16px, 5vw, 24px);
+  width: 56px; height: 56px;
   border-radius: 50%;
   background: var(--accent);
   color: #fff; border: none;
-  font-size: 28px; font-weight: 300;
+  font-size: 30px; font-weight: 300;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 24px var(--accent-glow);
   cursor: pointer; z-index: 60;
-  transition: background 0.3s, box-shadow 0.3s, transform 0.15s;
-  animation: fabIn 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.2s backwards;
-  -webkit-tap-highlight-color: transparent;
+  transition: background 0.3s, transform 0.15s;
+  animation: fabIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s backwards,
+             neonPulse 3s infinite 1s;
+  touch-action: manipulation;
 }
-.fab:active { transform: scale(0.9) }
+.fab:active { transform: scale(0.88); }
+.fab.hidden { display: none; }
 
-/* Bottom Tab Bar */
+/* ========== BOTTOM TAB BAR ========== */
 .tab-bar {
   position: fixed; bottom: 0; left: 0; right: 0;
   height: calc(var(--tab-h) + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
   display: flex;
-  background: rgba(10,10,15,0.88);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-top: 1px solid var(--border-card);
+  background: rgba(10, 10, 15, 0.92);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-top: 1px solid rgba(255,255,255,0.04);
   z-index: 100;
+  position: fixed;
 }
 .tab-item {
   flex: 1;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 3px;
+  gap: 2px;
   color: var(--text-dim);
   background: none; border: none;
   cursor: pointer;
-  transition: color 0.25s, transform 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  position: relative;
+  transition: color 0.3s;
+  touch-action: manipulation;
   font-family: inherit;
+  position: relative;
 }
 .tab-item.active {
   color: var(--accent);
 }
-.tab-item.active::after {
-  content: '';
-  position: absolute; top: 0px; left: 50%; transform: translateX(-50%);
-  width: 24px; height: 3px;
+.tab-icon { width: 22px; height: 22px; }
+.tab-label { font-size: 10px; font-weight: 500; }
+
+/* Tab Slide Indicator */
+.tab-indicator {
+  position: absolute;
+  top: 0; left: 0;
+  height: 3px;
   background: var(--accent);
   border-radius: 0 0 4px 4px;
-  box-shadow: 0 4px 12px var(--accent);
+  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.4s;
+  box-shadow: 0 4px 14px var(--accent);
+  z-index: 101;
 }
-.tab-icon { width: 24px; height: 24px }
-.tab-label { font-size: 11px; font-weight: 500 }
 
-/* Modal */
+/* ========== MODAL ========== */
 .modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 200;
   opacity: 0; visibility: hidden;
   transition: opacity 0.3s, visibility 0.3s;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
-.modal-overlay.open { opacity: 1; visibility: visible }
+.modal-overlay.open { opacity: 1; visibility: visible; }
 .modal-sheet {
   position: fixed; bottom: 0; left: 0; right: 0;
-  background: #141420;
-  border-radius: 20px 20px 0 0;
-  padding: 20px 20px calc(24px + var(--safe-bottom));
+  background: linear-gradient(180deg, #1a1a2e 0%, #141420 100%);
+  border-radius: 24px 24px 0 0;
+  padding: 20px clamp(16px, 5vw, 24px) calc(24px + var(--safe-bottom));
   transform: translateY(100%);
-  transition: transform 0.4s cubic-bezier(0.32,0.72,0,1);
+  transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
   z-index: 201;
-  max-height: 85dvh; overflow-y: auto;
+  max-height: 85dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
-.modal-overlay.open .modal-sheet { transform: translateY(0) }
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
 .modal-handle {
-  width: 36px; height: 4px; border-radius: 2px;
+  width: 40px; height: 4px;
+  border-radius: 2px;
   background: rgba(255,255,255,0.15);
-  margin: 0 auto 16px;
+  margin: 0 auto 18px;
 }
 .modal-title {
-  font-size: 18px; font-weight: 700; margin-bottom: 20px;
+  font-size: clamp(17px, 5vw, 20px);
+  font-weight: 700;
+  margin-bottom: 20px;
 }
-.form-group { margin-bottom: 16px }
+.form-group { margin-bottom: 16px; }
 .form-label {
-  display: block; font-size: 13px; color: var(--text-secondary);
-  margin-bottom: 6px; font-weight: 500;
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  font-weight: 500;
 }
 .form-input {
-  width: 100%; height: 44px;
+  width: 100%;
+  height: 48px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
-  font-size: 15px; padding: 0 12px;
+  font-size: 16px;
+  padding: 0 14px;
   font-family: inherit;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 .form-input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
-.form-input::placeholder { color: var(--text-dim) }
+.form-input::placeholder { color: var(--text-dim); }
 .form-row {
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 340px) {
+  .form-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .form-row .form-group:last-child {
+    grid-column: 1 / -1;
+  }
 }
 .btn-save {
-  width: 100%; height: 48px;
-  background: var(--accent);
+  width: 100%;
+  height: 50px;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent), white 15%));
   color: #fff; border: none;
   border-radius: var(--radius-sm);
   font-size: 16px; font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.15s;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
   font-family: inherit;
   margin-top: 4px;
+  box-shadow: 0 4px 20px var(--accent-glow);
 }
-.btn-save:active { transform: scale(0.97) }
+.btn-save:active { transform: scale(0.96); }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 0; background: transparent }
+/* ========== HISTORY PANEL ========== */
+.history-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.stat-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: clamp(12px, 3vw, 18px) 8px;
+  text-align: center;
+  animation: cardIn 0.4s ease-out backwards;
+}
+.stat-card:nth-child(2) { animation-delay: 0.08s; }
+.stat-card:nth-child(3) { animation-delay: 0.16s; }
+.stat-value {
+  font-size: clamp(22px, 6vw, 30px);
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.history-filter {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+.history-filter::-webkit-scrollbar { display: none; }
+.filter-btn {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s;
+  font-family: inherit;
+  touch-action: manipulation;
+}
+.filter-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 12px var(--accent-glow);
+}
+
+.history-day {
+  margin-bottom: 16px;
+  animation: slideRight 0.4s ease-out backwards;
+}
+.history-date {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  padding-left: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.history-date-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--accent-glow);
+  color: var(--accent);
+}
+.history-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.history-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.history-item-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.history-item-detail {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.history-item-pct {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.history-empty {
+  text-align: center;
+  padding: 50px 20px;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+/* ========== SCROLLBAR ========== */
+::-webkit-scrollbar { width: 0; background: transparent; }
+
+/* ========== TOAST ========== */
+.toast {
+  position: fixed;
+  bottom: calc(var(--tab-h) + var(--safe-bottom) + 80px);
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(30, 30, 45, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-primary);
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 300;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 </style>
 </head>
 <body>
 
-<div class="loader-overlay" id="loader">
-  <div class="spinner"></div>
-  <div style="color: var(--text-secondary); font-size: 14px;">同步云端数据中...</div>
+<!-- Floating Orbs Background -->
+<div class="bg-orbs" aria-hidden="true">
+  <div class="bg-orb"></div>
+  <div class="bg-orb"></div>
+  <div class="bg-orb"></div>
 </div>
 
+<!-- Loader -->
+<div class="loader-overlay" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-text">同步数据中...</div>
+</div>
+
+<!-- Header -->
 <header class="app-header">
   <div class="header-top">
     <h1 class="header-title" id="headerTitle">胸部</h1>
@@ -428,34 +751,44 @@ body {
   <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
 </header>
 
+<!-- Tab Panels -->
 <main class="tab-panels">
   <section class="tab-panel active" data-part="chest" id="panel-chest"></section>
   <section class="tab-panel" data-part="shoulder" id="panel-shoulder"></section>
   <section class="tab-panel" data-part="legs" id="panel-legs"></section>
   <section class="tab-panel" data-part="back" id="panel-back"></section>
+  <section class="tab-panel" data-part="history" id="panel-history"></section>
 </main>
 
+<!-- FAB -->
 <button class="fab" id="fabAdd" aria-label="添加动作">+</button>
 
-<nav class="tab-bar">
-  <button class="tab-item active" data-tab="chest">
+<!-- Tab Bar -->
+<nav class="tab-bar" id="tabBar">
+  <div class="tab-indicator" id="tabIndicator"></div>
+  <button class="tab-item active" data-tab="chest" id="tab-chest">
     <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="10" width="6" height="4" rx="1"/><rect x="16" y="10" width="6" height="4" rx="1"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
     <span class="tab-label">胸部</span>
   </button>
-  <button class="tab-item" data-tab="shoulder">
+  <button class="tab-item" data-tab="shoulder" id="tab-shoulder">
     <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M3 12h6M15 12h6"/><path d="M1 12a1 1 0 0 1 1-1h1a1 1 0 0 1 0 2H2a1 1 0 0 1-1-1zM21 12a1 1 0 0 1 1-1h0a1 1 0 0 1 0 2h0a1 1 0 0 1-1-1z"/></svg>
     <span class="tab-label">肩部</span>
   </button>
-  <button class="tab-item" data-tab="legs">
+  <button class="tab-item" data-tab="legs" id="tab-legs">
     <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v8l-2 8M18 4v8l2 8"/><path d="M6 12h12"/></svg>
     <span class="tab-label">腿部</span>
   </button>
-  <button class="tab-item" data-tab="back">
+  <button class="tab-item" data-tab="back" id="tab-back">
     <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/><path d="M6 8l6-4 6 4"/><path d="M6 16l6 4 6-4"/></svg>
     <span class="tab-label">背部</span>
   </button>
+  <button class="tab-item" data-tab="history" id="tab-history">
+    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span class="tab-label">历史</span>
+  </button>
 </nav>
 
+<!-- Modal -->
 <div class="modal-overlay" id="modal">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
@@ -483,26 +816,125 @@ body {
   </div>
 </div>
 
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script>
+/* ===============================================================
+   CONFIG
+   =============================================================== */
 const SUPABASE_URL = 'https://owqhouyafggdzgcqwlji.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QgsSE7ZoIfcaPsJLlkfS5w_tGvRz_I6';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
-if (!supabaseClient) console.error("Supabase script failed to load. CDN might be blocked.");
+if (!supabaseClient) console.warn('Supabase SDK not loaded — running in offline mode.');
 const USER_ID = 'default_user';
 
 const PARTS = ['chest', 'shoulder', 'legs', 'back'];
-const LABELS = { chest:'胸部', shoulder:'肩部', legs:'腿部', back:'背部' };
-const COLORS = { chest:'#ef4444', shoulder:'#f59e0b', legs:'#10b981', back:'#6366f1' };
-const GLOWS = { chest:'rgba(239,68,68,0.15)', shoulder:'rgba(245,158,11,0.15)', legs:'rgba(16,185,129,0.15)', back:'rgba(99,102,241,0.15)' };
+const ALL_TABS = ['chest', 'shoulder', 'legs', 'back', 'history'];
+const LABELS = { chest:'胸部', shoulder:'肩部', legs:'腿部', back:'背部', history:'历史' };
+const COLORS = { chest:'#ff3366', shoulder:'#ff9933', legs:'#00e676', back:'#6366f1', history:'#e040fb' };
+const GLOWS  = {
+  chest:'rgba(255,51,102,0.2)', shoulder:'rgba(255,153,51,0.2)',
+  legs:'rgba(0,230,118,0.2)', back:'rgba(99,102,241,0.2)', history:'rgba(224,64,251,0.2)'
+};
 
+/* ===============================================================
+   IndexedDB CACHE LAYER
+   =============================================================== */
+const IDBCache = {
+  DB_NAME: 'fitness-plan-cache',
+  DB_VERSION: 2,
+
+  _open() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('kv'))
+          db.createObjectStore('kv');
+        if (!db.objectStoreNames.contains('workout_history'))
+          db.createObjectStore('workout_history', { keyPath: 'id', autoIncrement: true });
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  },
+
+  async get(key) {
+    try {
+      const db = await this._open();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('kv', 'readonly');
+        const r = tx.objectStore('kv').get(key);
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+      });
+    } catch { return undefined; }
+  },
+
+  async set(key, val) {
+    try {
+      const db = await this._open();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('kv', 'readwrite');
+        tx.objectStore('kv').put(val, key);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) { console.warn('IDB set error:', e); }
+  },
+
+  async addHistory(record) {
+    try {
+      const db = await this._open();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('workout_history', 'readwrite');
+        tx.objectStore('workout_history').add(record);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) { console.warn('IDB addHistory error:', e); }
+  },
+
+  async getAllHistory() {
+    try {
+      const db = await this._open();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('workout_history', 'readonly');
+        const r = tx.objectStore('workout_history').getAll();
+        r.onsuccess = () => resolve(r.result || []);
+        r.onerror = () => reject(r.error);
+      });
+    } catch { return []; }
+  }
+};
+
+/* ===============================================================
+   DATA STORE (IndexedDB + Supabase hybrid)
+   =============================================================== */
 const Store = {
   _d: { chest:[], shoulder:[], legs:[], back:[] },
   _custom: {},
   _lastReset: '',
+  _history: [],
 
   async init() {
+    // 1) 先从 IndexedDB 读取缓存（离线可用 & 快速启动）
     try {
-      if (!supabaseClient) throw new Error("No supabase client");
+      const cached = await IDBCache.get('fitness_data');
+      if (cached) {
+        this._d = { chest:[], shoulder:[], legs:[], back:[], ...(cached.exercises || {}) };
+        this._custom = cached.custom_exercises || {};
+        this._lastReset = cached.last_reset || '';
+      }
+      this._history = await IDBCache.getAllHistory();
+    } catch (e) {
+      console.warn('IDB read error:', e);
+    }
+
+    // 2) 后台拉取 Supabase 最新数据（联网时合并）
+    try {
+      if (!supabaseClient) throw new Error('No supabase client');
       const { data, error } = await supabaseClient
         .from('fitness_data')
         .select('*')
@@ -510,30 +942,45 @@ const Store = {
         .single();
 
       if (data) {
+        // Supabase 数据作为权威来源
         this._d = { chest:[], shoulder:[], legs:[], back:[], ...(data.exercises || {}) };
         this._custom = data.custom_exercises || this._custom;
-        this._lastReset = data.last_reset || '';
+        this._lastReset = data.last_reset || this._lastReset;
+        // 同步到 IndexedDB
+        await this._saveToIDB();
       } else {
-        // 如果没有第一条数据，尝试插入
         await supabaseClient.from('fitness_data').insert([{ user_id: USER_ID }]);
       }
     } catch (e) {
-      console.error("Supabase load error:", e);
+      console.warn('Supabase load error (offline mode):', e);
     }
   },
 
   load() { return this._d; },
 
-  save() {
-    // 异步更新，不阻塞 UI 交互（Optimistic UI 理念）
-    if (supabaseClient) supabaseClient.from('fitness_data').update({
+  async _saveToIDB() {
+    await IDBCache.set('fitness_data', {
       exercises: this._d,
       custom_exercises: this._custom,
-      last_reset: this._lastReset,
-      updated_at: new Date().toISOString()
-    }).eq('user_id', USER_ID).then(({error}) => {
-      if(error) console.error("Supabase sync error:", error);
+      last_reset: this._lastReset
     });
+  },
+
+  save() {
+    // 写入 IndexedDB（同步保障）
+    this._saveToIDB();
+
+    // 异步写入 Supabase（Optimistic UI）
+    if (supabaseClient) {
+      supabaseClient.from('fitness_data').update({
+        exercises: this._d,
+        custom_exercises: this._custom,
+        last_reset: this._lastReset,
+        updated_at: new Date().toISOString()
+      }).eq('user_id', USER_ID).then(({ error }) => {
+        if (error) console.warn('Supabase sync error:', error);
+      });
+    }
   },
 
   getCustom(part) { return this._custom[part] || []; },
@@ -551,9 +998,28 @@ const Store = {
   setLastReset(v) {
     this._lastReset = v;
     this.save();
+  },
+
+  getHistory() { return this._history; },
+
+  async addHistoryEntry(entry) {
+    this._history.push(entry);
+    await IDBCache.addHistory(entry);
+    // Also sync to Supabase (fire & forget)
+    if (supabaseClient) {
+      supabaseClient.from('fitness_data').update({
+        history: this._history.slice(-90), // keep last 90 entries
+        updated_at: new Date().toISOString()
+      }).eq('user_id', USER_ID).then(({ error }) => {
+        if (error) console.warn('Supabase history sync error:', error);
+      });
+    }
   }
 };
 
+/* ===============================================================
+   DAILY RESET (with history snapshot)
+   =============================================================== */
 function checkReset() {
   const now = new Date();
   const boundary = new Date(now);
@@ -565,39 +1031,98 @@ function checkReset() {
 
   if (lastDate < boundary) {
     const data = Store.load();
+
+    // === 保存历史快照 ===
+    let anyData = false;
+    const snapshot = { date: boundary.toISOString().slice(0, 10), parts: {} };
+    for (const p of PARTS) {
+      if (data[p] && data[p].length) {
+        const completed = data[p].filter(ex =>
+          ex.completedSets && ex.completedSets.some(Boolean)
+        );
+        if (completed.length) {
+          anyData = true;
+          snapshot.parts[p] = completed.map(ex => ({
+            name: ex.name,
+            sets: ex.sets,
+            reps: ex.reps,
+            weight: ex.weight,
+            done: ex.completedSets ? ex.completedSets.filter(Boolean).length : 0
+          }));
+        }
+      }
+    }
+    if (anyData) {
+      Store.addHistoryEntry(snapshot);
+    }
+
+    // === 重置所有组 ===
     for (const p of PARTS) {
       if (data[p]) for (const ex of data[p]) {
-        if(ex.completedSets) {
+        if (ex.completedSets) {
           ex.completedSets = ex.completedSets.map(() => false);
         }
       }
     }
-    // SetLastReset 会自动调用 Store.save()
     Store.setLastReset(now.toISOString());
   }
 }
 
+/* ===============================================================
+   UI: ACCENT & TAB
+   =============================================================== */
 let activeTab = 'chest';
 
 function setAccent(part) {
-  const r = document.documentElement.style;
-  r.setProperty('--accent', COLORS[part]);
-  r.setProperty('--accent-glow', GLOWS[part]);
+  const s = document.documentElement.style;
+  s.setProperty('--accent', COLORS[part]);
+  s.setProperty('--accent-glow', GLOWS[part]);
+}
+
+function moveTabIndicator(tabId) {
+  const tabEl = document.getElementById('tab-' + tabId);
+  const bar = document.getElementById('tabBar');
+  const indicator = document.getElementById('tabIndicator');
+  if (!tabEl || !bar || !indicator) return;
+  const barRect = bar.getBoundingClientRect();
+  const tabRect = tabEl.getBoundingClientRect();
+  indicator.style.left = (tabRect.left - barRect.left + tabRect.width * 0.25) + 'px';
+  indicator.style.width = (tabRect.width * 0.5) + 'px';
+  indicator.style.background = COLORS[tabId] || COLORS.history;
+  indicator.style.boxShadow = '0 4px 14px ' + (GLOWS[tabId] || GLOWS.history);
 }
 
 function switchTab(part) {
   activeTab = part;
   setAccent(part);
+
   document.querySelectorAll('.tab-item').forEach(el =>
     el.classList.toggle('active', el.dataset.tab === part)
   );
   document.querySelectorAll('.tab-panel').forEach(el =>
     el.classList.toggle('active', el.dataset.part === part)
   );
+
   document.getElementById('headerTitle').textContent = LABELS[part];
-  updateProgress(part);
+  moveTabIndicator(part);
+
+  // FAB visibility
+  const fab = document.getElementById('fabAdd');
+  fab.classList.toggle('hidden', part === 'history');
+
+  if (part === 'history') {
+    renderHistory();
+    // Hide progress for history
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('progressText').textContent = '训练记录';
+  } else {
+    updateProgress(part);
+  }
 }
 
+/* ===============================================================
+   UI: RENDER EXERCISES
+   =============================================================== */
 function esc(s) {
   const d = document.createElement('div');
   d.textContent = s;
@@ -609,7 +1134,11 @@ function renderExercises(part) {
   const exercises = Store.load()[part];
 
   if (!exercises || !exercises.length) {
-    panel.innerHTML = '<div class="empty-state"><div class="empty-icon">🏋️</div><p>还没有训练动作<br>点击 + 添加</p></div>';
+    panel.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🏋️</div>
+        <p>还没有训练动作<br>点击 <strong>+</strong> 添加</p>
+      </div>`;
     return;
   }
 
@@ -617,7 +1146,7 @@ function renderExercises(part) {
     const completedSets = ex.completedSets || Array(ex.sets || 0).fill(false);
     const done = completedSets.filter(Boolean).length;
     const allDone = done === ex.sets;
-    return `<div class="exercise-card${allDone ? ' all-done' : ''}" data-idx="${i}" style="animation-delay:${i * 0.05}s">
+    return `<div class="exercise-card${allDone ? ' all-done' : ''}" data-idx="${i}" style="animation-delay:${i * 0.07}s">
       <div class="card-header">
         <span class="card-name">${esc(ex.name)}</span>
         <span class="card-weight">${ex.weight}kg</span>
@@ -625,7 +1154,7 @@ function renderExercises(part) {
       </div>
       <div class="card-info">${ex.reps} 次 × ${ex.sets} 组</div>
       <div class="set-row">
-        ${(ex.completedSets || Array(ex.sets || 0).fill(false)).map((s, si) =>
+        ${completedSets.map((s, si) =>
           `<div class="set-circle${s ? ' done' : ''}" data-action="toggle" data-ex="${i}" data-set="${si}">${s ? '✓' : (si + 1)}</div>`
         ).join('')}
       </div>
@@ -637,10 +1166,14 @@ function renderExercises(part) {
   }).join('');
 }
 
+/* ===============================================================
+   UI: TOGGLE SET (with effects)
+   =============================================================== */
 function toggleSet(exIdx, setIdx) {
   const data = Store.load();
   const ex = data[activeTab][exIdx];
   if (!ex.completedSets) ex.completedSets = Array(ex.sets).fill(false);
+  const wasComplete = ex.completedSets.filter(Boolean).length === ex.sets;
   ex.completedSets[setIdx] = !ex.completedSets[setIdx];
   Store.save();
 
@@ -648,16 +1181,38 @@ function toggleSet(exIdx, setIdx) {
   if (!card) return;
 
   const circle = card.querySelectorAll('.set-circle')[setIdx];
-  circle.classList.toggle('done');
-  circle.textContent = ex.completedSets[setIdx] ? '✓' : (setIdx + 1);
+  const justDone = ex.completedSets[setIdx];
+  circle.classList.toggle('done', justDone);
+  circle.textContent = justDone ? '✓' : (setIdx + 1);
+
+  // Pop animation
   circle.style.animation = 'none';
   void circle.offsetHeight;
-  circle.style.animation = 'pop 0.3s ease-out';
+  circle.style.animation = 'pop 0.35s cubic-bezier(0.34,1.56,0.64,1)';
 
+  // Ripple inside circle
+  if (justDone) {
+    createRipple(circle);
+    particleBurst(circle);
+  }
+
+  // Update footer
   const done = ex.completedSets.filter(Boolean).length;
   card.querySelector('.card-progress').textContent = `${done}/${ex.sets} 组`;
   card.querySelector('.card-pct').textContent = `${Math.round(done / ex.sets * 100)}%`;
-  card.classList.toggle('all-done', done === ex.sets);
+
+  const allDone = done === ex.sets;
+  card.classList.toggle('all-done', allDone);
+
+  // Celebrate if just completed all sets!
+  if (allDone && !wasComplete) {
+    card.classList.remove('celebrate');
+    void card.offsetHeight;
+    card.classList.add('celebrate');
+    const rect = card.getBoundingClientRect();
+    launchConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    showToast('🎉 全部完成！太强了！');
+  }
 
   updateProgress(activeTab);
 }
@@ -672,27 +1227,306 @@ function deleteExercise(idx) {
   updateProgress(activeTab);
 }
 
+/* ===============================================================
+   UI: PROGRESS
+   =============================================================== */
 function updateProgress(part) {
   const exercises = Store.load()[part];
   let total = 0, done = 0;
-  if(exercises) {
+  if (exercises) {
     for (const ex of exercises) {
       total += ex.sets;
-      if(ex.completedSets) done += ex.completedSets.filter(Boolean).length;
+      if (ex.completedSets) done += ex.completedSets.filter(Boolean).length;
     }
   }
   const pct = total ? Math.round(done / total * 100) : 0;
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressText').textContent = total ? `${done}/${total} 组 · ${pct}%` : '暂无动作';
+  const fill = document.getElementById('progressFill');
+  const text = document.getElementById('progressText');
+
+  fill.style.width = pct + '%';
+
+  const newText = total ? `${done}/${total} 组 · ${pct}%` : '暂无动作';
+  if (text.textContent !== newText) {
+    text.textContent = newText;
+    text.classList.remove('pop');
+    void text.offsetHeight;
+    text.classList.add('pop');
+  }
 }
 
+/* ===============================================================
+   UI: HISTORY
+   =============================================================== */
+function renderHistory(filter = 'all') {
+  const panel = document.getElementById('panel-history');
+  const history = Store.getHistory();
+
+  // Build stats
+  const totalDays = new Set(history.map(h => h.date)).size;
+  let totalExDone = 0, totalExSets = 0;
+  for (const h of history) {
+    for (const p of Object.keys(h.parts)) {
+      for (const ex of h.parts[p]) {
+        totalExDone += ex.done;
+        totalExSets += ex.sets;
+      }
+    }
+  }
+  const avgPct = totalExSets ? Math.round(totalExDone / totalExSets * 100) : 0;
+
+  // Calculate streak
+  let streak = 0;
+  const sortedDates = [...new Set(history.map(h => h.date))].sort().reverse();
+  if (sortedDates.length) {
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    if (sortedDates[0] === today || sortedDates[0] === yesterday) {
+      streak = 1;
+      for (let i = 1; i < sortedDates.length; i++) {
+        const prev = new Date(sortedDates[i - 1]);
+        const curr = new Date(sortedDates[i]);
+        const diff = (prev - curr) / 86400000;
+        if (diff === 1) streak++;
+        else break;
+      }
+    }
+  }
+
+  // Filter history
+  const filtered = filter === 'all'
+    ? history
+    : history.filter(h => h.parts[filter] && h.parts[filter].length);
+
+  // Build HTML
+  const filterBtns = [
+    { key: 'all', label: '全部' },
+    { key: 'chest', label: '胸部' },
+    { key: 'shoulder', label: '肩部' },
+    { key: 'legs', label: '腿部' },
+    { key: 'back', label: '背部' }
+  ];
+
+  let html = `
+    <div class="history-stats">
+      <div class="stat-card">
+        <div class="stat-value">${totalDays}</div>
+        <div class="stat-label">训练天数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${streak}</div>
+        <div class="stat-label">连续天数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${avgPct}%</div>
+        <div class="stat-label">完成率</div>
+      </div>
+    </div>
+    <div class="history-filter" id="historyFilter">
+      ${filterBtns.map(b =>
+        `<button class="filter-btn${b.key === filter ? ' active' : ''}" data-filter="${b.key}">${b.label}</button>`
+      ).join('')}
+    </div>
+    <div id="historyList">`;
+
+  if (!filtered.length) {
+    html += `<div class="history-empty">
+      <div style="font-size:40px;margin-bottom:12px;opacity:0.3">📋</div>
+      暂无训练记录<br>完成训练后会自动保存
+    </div>`;
+  } else {
+    // Group by date, reversed
+    const grouped = {};
+    for (const h of filtered) {
+      if (!grouped[h.date]) grouped[h.date] = [];
+      grouped[h.date].push(h);
+    }
+    const dates = Object.keys(grouped).sort().reverse();
+
+    dates.forEach((date, di) => {
+      const dayLabel = formatDate(date);
+      const entries = grouped[date];
+      let dayDone = 0, daySets = 0;
+      const items = [];
+      for (const entry of entries) {
+        const parts = filter === 'all' ? Object.keys(entry.parts) : [filter];
+        for (const p of parts) {
+          if (!entry.parts[p]) continue;
+          for (const ex of entry.parts[p]) {
+            dayDone += ex.done;
+            daySets += ex.sets;
+            items.push({ ...ex, part: p });
+          }
+        }
+      }
+      const dayPct = daySets ? Math.round(dayDone / daySets * 100) : 0;
+
+      html += `<div class="history-day" style="animation-delay:${di * 0.06}s">
+        <div class="history-date">
+          ${dayLabel}
+          <span class="history-date-badge">${dayPct}%</span>
+        </div>`;
+      for (const item of items) {
+        html += `<div class="history-item">
+          <div class="history-item-left">
+            <span class="history-item-name">${esc(item.name)}</span>
+            <span class="history-item-detail">${LABELS[item.part]} · ${item.reps}次 × ${item.sets}组 · ${item.weight}kg</span>
+          </div>
+          <span class="history-item-pct">${item.done}/${item.sets}</span>
+        </div>`;
+      }
+      html += `</div>`;
+    });
+  }
+
+  html += `</div>`;
+  panel.innerHTML = html;
+
+  // Bind filter clicks
+  document.getElementById('historyFilter')?.addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (btn) renderHistory(btn.dataset.filter);
+  });
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = new Date();
+  const yesterday = new Date(Date.now() - 86400000);
+  if (dateStr === today.toISOString().slice(0, 10)) return '今天';
+  if (dateStr === yesterday.toISOString().slice(0, 10)) return '昨天';
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+  return `${month}月${day}日 · 周${weekdays[d.getDay()]}`;
+}
+
+/* ===============================================================
+   ANIMATIONS: PARTICLE BURST
+   =============================================================== */
+function particleBurst(el) {
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+  const count = 10;
+
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle-burst';
+    const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+    const dist = 25 + Math.random() * 25;
+    const tx = Math.cos(angle) * dist;
+    const ty = Math.sin(angle) * dist;
+    p.style.cssText = `
+      left:${cx}px; top:${cy}px;
+      background:${accent};
+      --tx:${tx}px; --ty:${ty}px;
+      width:${3 + Math.random() * 4}px;
+      height:${3 + Math.random() * 4}px;
+    `;
+    document.body.appendChild(p);
+    p.addEventListener('animationend', () => p.remove());
+  }
+}
+
+/* ===============================================================
+   ANIMATIONS: RIPPLE
+   =============================================================== */
+function createRipple(el) {
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  const size = Math.max(el.offsetWidth, el.offsetHeight);
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = '0px';
+  ripple.style.top = '0px';
+  el.appendChild(ripple);
+  ripple.addEventListener('animationend', () => ripple.remove());
+}
+
+/* ===============================================================
+   ANIMATIONS: CONFETTI (Canvas)
+   =============================================================== */
+function launchConfetti(x, y) {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:none';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  const colors = ['#ff3366','#ff9933','#00e676','#2979ff','#ffeb3b','#e040fb','#fff'];
+  const particles = [];
+  for (let i = 0; i < 60; i++) {
+    particles.push({
+      x: x || canvas.width / 2,
+      y: y || canvas.height / 2,
+      vx: (Math.random() - 0.5) * 14,
+      vy: (Math.random() - 0.5) * 14 - 6,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: Math.random() * 7 + 3,
+      rotation: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 12,
+      gravity: 0.18,
+      opacity: 1,
+      decay: 0.012 + Math.random() * 0.018
+    });
+  }
+
+  let frame;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    for (const p of particles) {
+      p.x += p.vx;
+      p.vy += p.gravity;
+      p.y += p.vy;
+      p.vx *= 0.99;
+      p.rotation += p.rotSpeed;
+      p.opacity -= p.decay;
+      if (p.opacity <= 0) continue;
+      alive = true;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rotation * Math.PI / 180);
+      ctx.globalAlpha = p.opacity;
+      ctx.fillStyle = p.color;
+      // Mix rectangles and circles
+      if (p.size > 6) {
+        ctx.fillRect(-p.size / 2, -p.size * 0.3, p.size, p.size * 0.6);
+      } else {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    if (alive) frame = requestAnimationFrame(animate);
+    else canvas.remove();
+  }
+  frame = requestAnimationFrame(animate);
+}
+
+/* ===============================================================
+   TOAST
+   =============================================================== */
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+/* ===============================================================
+   MODAL
+   =============================================================== */
 function openModal() {
   const modal = document.getElementById('modal');
   modal.classList.add('open');
   const list = document.getElementById('exerciseList');
   const customs = Store.getCustom(activeTab);
   list.innerHTML = customs.map(n => `<option value="${esc(n)}">`).join('');
-  setTimeout(() => document.getElementById('inputName').focus(), 400);
+  setTimeout(() => document.getElementById('inputName').focus(), 420);
 }
 
 function closeModal() {
@@ -722,42 +1556,38 @@ function saveExercise() {
   closeModal();
   renderExercises(activeTab);
   updateProgress(activeTab);
+  showToast('✅ 已添加');
 }
 
+/* ===============================================================
+   INIT
+   =============================================================== */
 document.addEventListener('DOMContentLoaded', async () => {
   try {
-    // 等待云端数据加载
     await Store.init();
   } catch (err) {
-    console.error("Initialization error:", err);
+    console.error('Init error:', err);
   } finally {
-    // 隐藏加载动画
     const loader = document.getElementById('loader');
-    if(loader) {
+    if (loader) {
       loader.style.opacity = '0';
-      setTimeout(() => loader.remove(), 300);
+      setTimeout(() => loader.remove(), 400);
     }
   }
 
-  try {
-    checkReset();
-  } catch (e) {
-    console.error("Reset check error:", e);
-  }
-  
-  try {
-    PARTS.forEach(p => renderExercises(p));
-  } catch (e) {
-    console.error("Render error:", e);
-  }
-  
+  try { checkReset(); } catch (e) { console.error('Reset error:', e); }
+
+  try { PARTS.forEach(p => renderExercises(p)); } catch (e) { console.error('Render error:', e); }
+
   switchTab('chest');
 
-  document.querySelector('.tab-bar').addEventListener('click', e => {
+  // Tab bar events
+  document.getElementById('tabBar').addEventListener('click', e => {
     const tab = e.target.closest('.tab-item');
     if (tab) switchTab(tab.dataset.tab);
   });
 
+  // Exercise panel events (delegation)
   document.querySelector('.tab-panels').addEventListener('click', e => {
     const t = e.target.closest('[data-action]');
     if (!t) return;
@@ -765,18 +1595,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     else if (t.dataset.action === 'delete') deleteExercise(+t.dataset.idx);
   });
 
+  // FAB
   document.getElementById('fabAdd').addEventListener('click', openModal);
+
+  // Modal
   document.getElementById('modal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });
   document.getElementById('btnSave').addEventListener('click', saveExercise);
 
+  // Keyboard nav in form
   document.getElementById('inputName').addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('inputSets').focus();
   });
   document.getElementById('inputWeight').addEventListener('keydown', e => {
     if (e.key === 'Enter') saveExercise();
   });
+
+  // Recalculate tab indicator on resize
+  window.addEventListener('resize', () => moveTabIndicator(activeTab));
 });
 </script>
 </body>
