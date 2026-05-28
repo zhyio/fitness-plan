@@ -366,6 +366,49 @@ body {
   color: var(--text-secondary);
   margin-bottom: 12px;
 }
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.technique-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 11px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.15s;
+}
+.technique-btn::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  box-shadow: none;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.technique-btn.has-note {
+  color: var(--accent);
+  background: var(--accent-glow);
+  border-color: rgba(255,255,255,0.12);
+}
+.technique-btn.has-note::before {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.technique-btn:active {
+  transform: scale(0.96);
+}
 
 /* ========== SET CIRCLES ========== */
 .set-row {
@@ -606,6 +649,20 @@ body {
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 .form-input::placeholder { color: var(--text-dim); }
+.technique-textarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  line-height: 1.65;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.technique-hint {
+  margin: -4px 0 16px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
 .template-helper {
   margin-top: 6px;
   font-size: 12px;
@@ -1081,6 +1138,23 @@ body {
   </div>
 </div>
 
+<!-- Technique Modal -->
+<div class="modal-overlay" id="techniqueModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="settings-top">
+      <h2 class="modal-title" id="techniqueTitle">动作要领</h2>
+      <button class="sheet-close" id="btnCloseTechnique" aria-label="关闭动作要领">&times;</button>
+    </div>
+    <p class="technique-hint">记录发力重点、呼吸节奏、动作幅度或需要避开的错误动作。</p>
+    <div class="form-group">
+      <label class="form-label" for="techniqueInput">动作要领</label>
+      <textarea class="form-input technique-textarea" id="techniqueInput" placeholder="例如：肩胛后收下沉，下降到胸前，推起时不要锁死肘关节。"></textarea>
+    </div>
+    <button class="btn-save" id="btnSaveTechnique">保存要领</button>
+  </div>
+</div>
+
 <!-- Settings / Exercise Library -->
 <div class="modal-overlay" id="settingsModal">
   <div class="modal-sheet settings-sheet">
@@ -1235,7 +1309,8 @@ function normalizeTemplates(source = {}) {
         name,
         sets: Math.max(1, parseInt(raw.sets) || 4),
         reps: Math.max(1, parseInt(raw.reps) || 12),
-        weight: Math.max(0, parseFloat(raw.weight) || 0)
+        weight: Math.max(0, parseFloat(raw.weight) || 0),
+        technique: String(raw.technique || '').trim()
       };
       const existing = normalized[part].findIndex(t => t.name.toLowerCase() === name.toLowerCase());
       if (existing >= 0) normalized[part][existing] = template;
@@ -1431,7 +1506,8 @@ const Store = {
       name: exercise.name,
       sets: exercise.sets,
       reps: exercise.reps,
-      weight: exercise.weight
+      weight: exercise.weight,
+      technique: exercise.technique || ''
     };
     const idx = this._custom[part].findIndex(t => t.name.toLowerCase() === exercise.name.toLowerCase());
     if (idx >= 0) this._custom[part][idx] = template;
@@ -1523,6 +1599,7 @@ function checkReset() {
    =============================================================== */
 let activeTab = 'chest';
 let settingsPart = 'chest';
+let editingTechnique = null;
 
 function setAccent(part) {
   const s = document.documentElement.style;
@@ -1602,6 +1679,7 @@ function renderExercises(part) {
     const done = completedSets.filter(Boolean).length;
     const progressDone = Math.min(done, ex.sets);
     const allDone = progressDone === ex.sets;
+    const hasTechnique = Boolean((ex.technique || '').trim());
     return `<div class="exercise-card${allDone ? ' all-done' : ''}" data-idx="${i}" style="animation-delay:${i * 0.07}s">
       <div class="card-header">
         <span class="card-name">${esc(ex.name)}</span>
@@ -1609,6 +1687,9 @@ function renderExercises(part) {
         <button class="btn-delete" data-action="delete" data-idx="${i}" aria-label="删除">&times;</button>
       </div>
       <div class="card-info">${ex.reps} 次 × ${ex.sets} 组 (+2 过量组)</div>
+      <div class="card-actions">
+        <button class="technique-btn${hasTechnique ? ' has-note' : ''}" data-action="technique" data-idx="${i}">动作要领</button>
+      </div>
       <div class="set-row">
         ${completedSets.map((s, si) => {
           const isBonus = si >= ex.sets;
@@ -1703,6 +1784,40 @@ function deleteExercise(idx) {
   Store.save();
   renderExercises(activeTab);
   updateProgress(activeTab);
+}
+
+function openTechniqueEditor(idx) {
+  const data = Store.load();
+  const ex = data[activeTab]?.[idx];
+  if (!ex) return;
+  editingTechnique = { part: activeTab, idx };
+  document.getElementById('techniqueTitle').textContent = `${ex.name} · 动作要领`;
+  document.getElementById('techniqueInput').value = ex.technique || '';
+  document.getElementById('techniqueModal').classList.add('open');
+  setTimeout(() => document.getElementById('techniqueInput').focus(), 360);
+}
+
+function closeTechniqueEditor() {
+  document.getElementById('techniqueModal').classList.remove('open');
+  editingTechnique = null;
+}
+
+function saveTechnique() {
+  if (!editingTechnique) return;
+  const data = Store.load();
+  const ex = data[editingTechnique.part]?.[editingTechnique.idx];
+  if (!ex) {
+    closeTechniqueEditor();
+    return;
+  }
+  ex.technique = document.getElementById('techniqueInput').value.trim();
+  Store.upsertTemplate(editingTechnique.part, ex);
+  Store.save();
+  const part = editingTechnique.part;
+  closeTechniqueEditor();
+  renderExercises(part);
+  updateProgress(part);
+  showToast(ex.technique ? '已保存动作要领' : '已清空动作要领');
 }
 
 /* ===============================================================
@@ -2017,9 +2132,11 @@ function saveExercise() {
   }
 
   const data = Store.load();
+  const template = Store.getTemplates(activeTab).find(t => t.name === name);
   const exercise = {
     id: Date.now().toString(36),
     name, sets, reps, weight,
+    technique: template?.technique || '',
     completedSets: Array(sets).fill(false)
   };
   data[activeTab].push(exercise);
@@ -2117,6 +2234,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!t) return;
     if (t.dataset.action === 'toggle') toggleSet(+t.dataset.ex, +t.dataset.set);
     else if (t.dataset.action === 'delete') deleteExercise(+t.dataset.idx);
+    else if (t.dataset.action === 'technique') openTechniqueEditor(+t.dataset.idx);
   });
 
   // FAB
@@ -2145,6 +2263,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btnSave').addEventListener('click', saveExercise);
   document.getElementById('templateSelect').addEventListener('change', e => {
     if (e.target.value) applyTemplate(e.target.value);
+  });
+
+  // Technique modal
+  document.getElementById('btnCloseTechnique').addEventListener('click', closeTechniqueEditor);
+  document.getElementById('btnSaveTechnique').addEventListener('click', saveTechnique);
+  document.getElementById('techniqueModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeTechniqueEditor();
   });
 
   // Settings / remembered exercise templates
