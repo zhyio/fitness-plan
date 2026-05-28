@@ -366,23 +366,19 @@ body {
   color: var(--text-secondary);
   margin-bottom: 12px;
 }
-.card-actions {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-}
 .technique-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 30px;
-  padding: 0 11px;
+  flex-shrink: 0;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 9px;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 999px;
   background: rgba(255,255,255,0.04);
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   cursor: pointer;
   touch-action: manipulation;
@@ -1684,12 +1680,10 @@ function renderExercises(part) {
       <div class="card-header">
         <span class="card-name">${esc(ex.name)}</span>
         <span class="card-weight">${ex.weight}kg</span>
+        <button class="technique-btn${hasTechnique ? ' has-note' : ''}" data-action="technique" data-idx="${i}">动作要领</button>
         <button class="btn-delete" data-action="delete" data-idx="${i}" aria-label="删除">&times;</button>
       </div>
       <div class="card-info">${ex.reps} 次 × ${ex.sets} 组 (+2 过量组)</div>
-      <div class="card-actions">
-        <button class="technique-btn${hasTechnique ? ' has-note' : ''}" data-action="technique" data-idx="${i}">动作要领</button>
-      </div>
       <div class="set-row">
         ${completedSets.map((s, si) => {
           const isBonus = si >= ex.sets;
