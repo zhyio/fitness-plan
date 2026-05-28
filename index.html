@@ -1632,12 +1632,15 @@ function toggleSet(exIdx, setIdx) {
   const ex = data[activeTab][exIdx];
   const totalSets = (ex.sets || 0) + 2;
   if (!ex.completedSets || ex.completedSets.length !== totalSets) {
-      const old = ex.completedSets || [];
-      ex.completedSets = Array(totalSets).fill(false);
-      for(let j=0; j<Math.min(totalSets, old.length); j++) ex.completedSets[j] = old[j];
+    const old = ex.completedSets || [];
+    ex.completedSets = Array(totalSets).fill(false);
+    for (let j = 0; j < Math.min(totalSets, old.length); j++) ex.completedSets[j] = old[j];
+  }
+
+  const wasComplete = ex.completedSets.filter(Boolean).length >= ex.sets;
   const isCurrentlyDone = ex.completedSets[setIdx];
   let targetIdx = setIdx;
-  
+
   if (!isCurrentlyDone) {
     // 点击未点亮的组，总是点亮第一个未点亮的组
     targetIdx = ex.completedSets.indexOf(false);
@@ -1645,7 +1648,7 @@ function toggleSet(exIdx, setIdx) {
     // 点击已点亮的组，总是熄灭最后一个已点亮的组
     targetIdx = ex.completedSets.lastIndexOf(true);
   }
-  
+
   if (targetIdx === -1) return;
 
   ex.completedSets[targetIdx] = !ex.completedSets[targetIdx];
