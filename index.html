@@ -994,9 +994,124 @@ body {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* ========== AUTH PANEL ========== */
+#authScreen {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--bg-main);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+}
+.auth-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 40px 20px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  text-align: center;
+}
+.auth-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.auth-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 30px;
+}
+.auth-input {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 16px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.auth-input:focus {
+  border-color: var(--accent);
+}
+.auth-btn-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+.btn-auth {
+  flex: 1;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s;
+}
+.btn-auth:active {
+  opacity: 0.8;
+}
+.btn-auth.primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+.btn-auth.secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-card);
+}
+#authError {
+  color: #ff3366;
+  font-size: 13px;
+  margin-top: 16px;
+  min-height: 20px;
+}
+.btn-logout {
+  width: 100%;
+  padding: 14px;
+  margin-top: 20px;
+  background: transparent;
+  border: 1px solid #ff3366;
+  color: #ff3366;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-logout:active {
+  background: rgba(255,51,102,0.1);
+}
 </style>
+
 </head>
 <body>
+<div id="authScreen" style="display: none;">
+  <div class="auth-box">
+    <div class="auth-title">Fitness Plan</div>
+    <div class="auth-subtitle">记录每一次泵感</div>
+    <input type="email" id="authEmail" class="auth-input" placeholder="邮箱" autocomplete="email">
+    <input type="password" id="authPassword" class="auth-input" placeholder="密码" autocomplete="current-password">
+    <div class="auth-btn-group">
+      <button class="btn-auth secondary" id="btnAuthSignup">注册</button>
+      <button class="btn-auth primary" id="btnAuthLogin">登录</button>
+    </div>
+    <div id="authError"></div>
+  </div>
+</div>
+<div id="app" style="display: none;">
+
 
 <!-- Floating Orbs Background -->
 <div class="bg-orbs" aria-hidden="true">
@@ -1214,6 +1329,7 @@ body {
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+</div>
 <script>
 /* ===============================================================
    CONFIG
@@ -1222,7 +1338,7 @@ const SUPABASE_URL = 'https://owqhouyafggdzgcqwlji.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QgsSE7ZoIfcaPsJLlkfS5w_tGvRz_I6';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 if (!supabaseClient) console.warn('Supabase SDK not loaded — running in offline mode.');
-const USER_ID = 'default_user';
+let USER_ID = null;
 
 const PARTS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
 const ALL_TABS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
@@ -1387,6 +1503,19 @@ const IDBCache = {
         tx.onerror = () => reject(tx.error);
       });
     } catch (e) { console.warn('IDB addHistory error:', e); }
+  },
+
+  async clearAll() {
+    try {
+      const db = await this._open();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(['kv', 'workout_history'], 'readwrite');
+        tx.objectStore('kv').clear();
+        tx.objectStore('workout_history').clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    } catch (e) { console.warn('IDB clearAll error:', e); }
   },
 
   async getAllHistory() {
@@ -2197,7 +2326,13 @@ function useTemplateFromSettings(name) {
 /* ===============================================================
    INIT
    =============================================================== */
-document.addEventListener('DOMContentLoaded', async () => {
+
+let isAppInitialized = false;
+
+async function initializeApp() {
+  if (isAppInitialized) return;
+  isAppInitialized = true;
+  
   try {
     await Store.init();
   } catch (err) {
@@ -2211,10 +2346,62 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try { checkReset(); } catch (e) { console.error('Reset error:', e); }
-
   try { PARTS.forEach(p => renderExercises(p)); } catch (e) { console.error('Render error:', e); }
-
   switchTab('chest');
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!supabaseClient) {
+    // Offline / No SDK
+    USER_ID = 'offline_user';
+    document.getElementById('app').style.display = 'block';
+    initializeApp();
+  } else {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        USER_ID = session.user.id;
+        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        initializeApp();
+      } else {
+        USER_ID = null;
+        isAppInitialized = false;
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('authScreen').style.display = 'flex';
+        // Cleanup local state to prevent data leakage
+        Store._d = emptyWorkoutPlan();
+        IDBCache.clearAll();
+      }
+    });
+  }
+
+  // Auth Events
+  document.getElementById('btnAuthLogin')?.addEventListener('click', async () => {
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPassword').value;
+    const errEl = document.getElementById('authError');
+    if (!email || !password) return errEl.textContent = '请输入邮箱和密码';
+    errEl.textContent = '登录中...';
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error) errEl.textContent = error.message;
+    else errEl.textContent = '';
+  });
+
+  document.getElementById('btnAuthSignup')?.addEventListener('click', async () => {
+    const email = document.getElementById('authEmail').value;
+    const password = document.getElementById('authPassword').value;
+    const errEl = document.getElementById('authError');
+    if (!email || !password) return errEl.textContent = '请输入邮箱和密码';
+    errEl.textContent = '注册中...';
+    const { error } = await supabaseClient.auth.signUp({ email, password });
+    if (error) errEl.textContent = error.message;
+    else errEl.textContent = '注册成功或请求已发送(若需邮箱验证)。';
+  });
+
+  document.getElementById('btnLogout')?.addEventListener('click', async () => {
+    closeSettings();
+    if (supabaseClient) await supabaseClient.auth.signOut();
+  });
 
   // Tab bar events
   document.getElementById('tabBar').addEventListener('click', e => {
