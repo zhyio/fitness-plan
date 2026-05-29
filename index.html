@@ -1101,15 +1101,30 @@ body {
   <div class="auth-box">
     <div class="auth-title">Fitness Plan</div>
     <div class="auth-subtitle">记录每一次泵感</div>
-    <input type="email" id="authEmail" class="auth-input" placeholder="邮箱" autocomplete="email">
-    <input type="password" id="authPassword" class="auth-input" placeholder="密码" autocomplete="current-password">
+    <input type="text" id="authAccount" class="auth-input" placeholder="输入账号" autocomplete="username">
+    <input type="password" id="authPassword" class="auth-input" placeholder="输入密码" autocomplete="current-password">
     <div class="auth-btn-group">
-      <button class="btn-auth secondary" id="btnAuthSignup">注册</button>
+      <button class="btn-auth secondary" id="btnShowRegister">去注册</button>
       <button class="btn-auth primary" id="btnAuthLogin">登录</button>
     </div>
     <div id="authError"></div>
   </div>
 </div>
+
+<!-- Register Modal -->
+<div class="modal-overlay" id="registerModal">
+  <div class="modal-sheet settings-sheet" style="padding: 24px;">
+    <div class="settings-top">
+      <h2 class="modal-title">注册新账号</h2>
+      <button class="sheet-close" id="btnCloseRegister" aria-label="关闭">&times;</button>
+    </div>
+    <input type="text" id="regAccount" class="auth-input" placeholder="设置账号名称" style="margin-top: 10px;">
+    <input type="password" id="regPassword" class="auth-input" placeholder="设置密码 (至少6位)">
+    <button class="btn-auth primary" id="btnSubmitRegister" style="width: 100%; margin-top: 10px;">确认注册</button>
+    <div id="regError" style="color: #ff3366; font-size: 13px; margin-top: 12px; text-align: center; min-height: 20px;"></div>
+  </div>
+</div>
+
 <div id="app" style="display: none;">
 
 
@@ -2377,25 +2392,56 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Auth Events
   document.getElementById('btnAuthLogin')?.addEventListener('click', async () => {
-    const email = document.getElementById('authEmail').value;
+    const account = document.getElementById('authAccount').value.trim();
     const password = document.getElementById('authPassword').value;
     const errEl = document.getElementById('authError');
-    if (!email || !password) return errEl.textContent = '请输入邮箱和密码';
+    if (!account || !password) return errEl.textContent = '请输入账号和密码';
     errEl.textContent = '登录中...';
+    
+    const email = account + '@fitness.local';
     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) errEl.textContent = error.message;
+    if (error) errEl.textContent = '登录失败: ' + error.message;
     else errEl.textContent = '';
   });
 
-  document.getElementById('btnAuthSignup')?.addEventListener('click', async () => {
-    const email = document.getElementById('authEmail').value;
-    const password = document.getElementById('authPassword').value;
-    const errEl = document.getElementById('authError');
-    if (!email || !password) return errEl.textContent = '请输入邮箱和密码';
+  document.getElementById('btnShowRegister')?.addEventListener('click', () => {
+    document.getElementById('registerModal').classList.add('open');
+  });
+
+  document.getElementById('btnCloseRegister')?.addEventListener('click', () => {
+    document.getElementById('registerModal').classList.remove('open');
+    document.getElementById('regError').textContent = '';
+  });
+  
+  document.getElementById('registerModal')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) {
+      document.getElementById('registerModal').classList.remove('open');
+      document.getElementById('regError').textContent = '';
+    }
+  });
+
+  document.getElementById('btnSubmitRegister')?.addEventListener('click', async () => {
+    const account = document.getElementById('regAccount').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const errEl = document.getElementById('regError');
+    
+    if (!account || !password) return errEl.textContent = '请输入账号和密码';
+    if (password.length < 6) return errEl.textContent = '密码至少需要 6 位';
+    
     errEl.textContent = '注册中...';
+    const email = account + '@fitness.local';
+    
     const { error } = await supabaseClient.auth.signUp({ email, password });
-    if (error) errEl.textContent = error.message;
-    else errEl.textContent = '注册成功或请求已发送(若需邮箱验证)。';
+    if (error) {
+      errEl.textContent = '注册失败: ' + error.message;
+    } else {
+      errEl.textContent = '注册成功！';
+      setTimeout(() => {
+        document.getElementById('registerModal').classList.remove('open');
+        document.getElementById('authAccount').value = account;
+        document.getElementById('authPassword').value = password;
+      }, 1000);
+    }
   });
 
   document.getElementById('btnLogout')?.addEventListener('click', async () => {
