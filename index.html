@@ -1101,7 +1101,7 @@ body {
   <div class="auth-box">
     <div class="auth-title">Fitness Plan</div>
     <div class="auth-subtitle">记录每一次泵感</div>
-    <input type="text" id="authAccount" class="auth-input" placeholder="输入账号" autocomplete="username">
+    <input type="text" id="authAccount" class="auth-input" placeholder="输入账号（任意字符）" autocomplete="username">
     <input type="password" id="authPassword" class="auth-input" placeholder="输入密码" autocomplete="current-password">
     <div class="auth-btn-group">
       <button class="btn-auth secondary" id="btnShowRegister">去注册</button>
@@ -1118,7 +1118,7 @@ body {
       <h2 class="modal-title">注册新账号</h2>
       <button class="sheet-close" id="btnCloseRegister" aria-label="关闭">&times;</button>
     </div>
-    <input type="text" id="regAccount" class="auth-input" placeholder="设置账号名称" style="margin-top: 10px;">
+    <input type="text" id="regAccount" class="auth-input" placeholder="设置账号名称（任意字符）" style="margin-top: 10px;">
     <input type="password" id="regPassword" class="auth-input" placeholder="设置密码 (至少6位)">
     <button class="btn-auth primary" id="btnSubmitRegister" style="width: 100%; margin-top: 10px;">确认注册</button>
     <div id="regError" style="color: #ff3366; font-size: 13px; margin-top: 12px; text-align: center; min-height: 20px;"></div>
@@ -1355,6 +1355,9 @@ const SUPABASE_KEY = 'sb_publishable_QgsSE7ZoIfcaPsJLlkfS5w_tGvRz_I6';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 if (!supabaseClient) console.warn('Supabase SDK not loaded — running in offline mode.');
 let USER_ID = null;
+const AUTH_SESSION_KEY = 'fitness-plan-auth-session';
+const LOCAL_ACCOUNTS_KEY = 'fitness-plan-local-accounts';
+let IS_LOCAL_AUTH = false;
 
 const PARTS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
 const ALL_TABS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
@@ -1555,6 +1558,7 @@ const Store = {
   _custom: mergeTemplates(),
   _lastReset: '',
   _history: [],
+  _authMeta: null,
 
   async init() {
     // 1) 先从 IndexedDB 读取缓存（离线可用 & 快速启动）
@@ -1563,6 +1567,7 @@ const Store = {
       if (cached) {
         this._d = { ...emptyWorkoutPlan(), ...(cached.exercises || {}) };
         
+        this._authMeta = cached.auth_meta || cached.custom_exercises?.__auth || null;
         let custom = cached.custom_exercises || {};
         let count = Object.values(custom).reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
         // 如果自定义动作库较少（< 15个），说明可能是新用户或之前没有预设数据，使用合并逻辑
@@ -1582,7 +1587,7 @@ const Store = {
 
     // 2) 后台拉取 Supabase 最新数据（联网时合并）
     try {
-      if (!supabaseClient) throw new Error('No supabase client');
+      if (!supabaseClient || IS_LOCAL_AUTH) throw new Error('No supabase client');
       const { data, error } = await supabaseClient
         .from('fitness_data')
         .select('*')
@@ -1594,6 +1599,7 @@ const Store = {
         this._d = { ...emptyWorkoutPlan(), ...(data.exercises || {}) };
         this._lastReset = data.last_reset || this._lastReset;
         
+        this._authMeta = data.custom_exercises?.__auth || null;
         let remoteCustom = data.custom_exercises || {};
         let count = Object.values(remoteCustom).reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
         if (count < 15) {
@@ -1618,6 +1624,7 @@ const Store = {
     await IDBCache.set('fitness_data', {
       exercises: this._d,
       custom_exercises: this._custom,
+      auth_meta: this._authMeta,
       last_reset: this._lastReset
     });
   },
@@ -1627,10 +1634,10 @@ const Store = {
     this._saveToIDB();
 
     // 异步写入 Supabase（Optimistic UI）
-    if (supabaseClient) {
+    if (supabaseClient && !IS_LOCAL_AUTH) {
       supabaseClient.from('fitness_data').update({
         exercises: this._d,
-        custom_exercises: this._custom,
+        custom_exercises: { ...this._custom, ...(this._authMeta ? { __auth: this._authMeta } : {}) },
         last_reset: this._lastReset,
         updated_at: new Date().toISOString()
       }).eq('user_id', USER_ID).then(({ error }) => {
@@ -1673,7 +1680,7 @@ const Store = {
     this._history.push(entry);
     await IDBCache.addHistory(entry);
     // Also sync to Supabase (fire & forget)
-    if (supabaseClient) {
+    if (supabaseClient && !IS_LOCAL_AUTH) {
       supabaseClient.from('fitness_data').update({
         history: this._history.slice(-90), // keep last 90 entries
         updated_at: new Date().toISOString()
@@ -2345,6 +2352,100 @@ function useTemplateFromSettings(name) {
 
 let isAppInitialized = false;
 
+function resetLocalState() {
+  Store._d = emptyWorkoutPlan();
+  Store._custom = mergeTemplates();
+  Store._lastReset = '';
+  Store._history = [];
+  Store._authMeta = null;
+}
+
+function normalizeAccount(account) {
+  return account.trim().toLowerCase();
+}
+
+async function hashText(text) {
+  if (window.crypto?.subtle) {
+    const data = new TextEncoder().encode(text);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(digest))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
+async function accountToUserId(account) {
+  const normalized = account.trim().toLowerCase();
+  const hash = await hashText(`fitness-plan-account:${normalized}`);
+  return `acct_${hash.slice(0, 40)}`;
+}
+
+async function passwordHashFor(account, password) {
+  return hashText(`fitness-plan-password:${normalizeAccount(account)}:${password}`);
+}
+
+function getAuthSession() {
+  try {
+    return JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function setAuthSession(session) {
+  localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
+}
+
+function clearAuthSession() {
+  localStorage.removeItem(AUTH_SESSION_KEY);
+}
+
+function getLocalAccounts() {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_ACCOUNTS_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveLocalAccounts(accounts) {
+  localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
+}
+
+async function localUserIdFor(account) {
+  const hash = await hashText(`fitness-plan-local-account:${normalizeAccount(account)}`);
+  return `local_${hash.slice(0, 40)}`;
+}
+
+function isRlsError(error) {
+  const msg = String(error?.message || error || '').toLowerCase();
+  return msg.includes('row-level security') || msg.includes('401') || msg.includes('rls');
+}
+
+async function fetchAccountRecord(userId) {
+  const { data, error } = await supabaseClient
+    .from('fitness_data')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+  if (error && !data) return null;
+  return data || null;
+}
+
+async function showAuthenticatedApp(userId, localOnly = false) {
+  USER_ID = userId;
+  IS_LOCAL_AUTH = localOnly;
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  await initializeApp();
+}
+
 async function initializeApp() {
   if (isAppInitialized) return;
   isAppInitialized = true;
@@ -2373,22 +2474,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('app').style.display = 'block';
     initializeApp();
   } else {
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        USER_ID = session.user.id;
-        document.getElementById('authScreen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        initializeApp();
-      } else {
-        USER_ID = null;
-        isAppInitialized = false;
-        document.getElementById('app').style.display = 'none';
-        document.getElementById('authScreen').style.display = 'flex';
-        // Cleanup local state to prevent data leakage
-        Store._d = emptyWorkoutPlan();
-        IDBCache.clearAll();
-      }
-    });
+    const session = getAuthSession();
+    if (session?.user_id) {
+      await showAuthenticatedApp(session.user_id, Boolean(session.local_only));
+    } else {
+      USER_ID = null;
+      IS_LOCAL_AUTH = false;
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('authScreen').style.display = 'flex';
+      resetLocalState();
+      await IDBCache.clearAll();
+    }
   }
 
   // Auth Events
@@ -2399,10 +2495,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!account || !password) return errEl.textContent = '请输入账号和密码';
     errEl.textContent = '登录中...';
     
-    const email = account + '@fitness.local';
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    if (error) errEl.textContent = '登录失败: ' + error.message;
-    else errEl.textContent = '';
+    try {
+      const userId = await accountToUserId(account);
+      const record = await fetchAccountRecord(userId);
+      const expected = record?.custom_exercises?.__auth?.password_hash;
+      const actual = await passwordHashFor(account, password);
+      if (expected && expected === actual) {
+        errEl.textContent = '';
+        setAuthSession({ user_id: userId, account: account.trim(), local_only: false });
+        await IDBCache.clearAll();
+        await showAuthenticatedApp(userId, false);
+        return;
+      }
+
+      const accounts = getLocalAccounts();
+      const local = accounts[normalizeAccount(account)];
+      if (local?.password_hash === actual) {
+        errEl.textContent = '';
+        setAuthSession({ user_id: local.user_id, account: account.trim(), local_only: true });
+        await IDBCache.clearAll();
+        await showAuthenticatedApp(local.user_id, true);
+        return;
+      }
+
+      errEl.textContent = '登录失败: 账号或密码不正确';
+    } catch (error) {
+      errEl.textContent = '登录失败: ' + (error?.message || '网络异常');
+    }
   });
 
   document.getElementById('btnShowRegister')?.addEventListener('click', () => {
@@ -2430,12 +2549,67 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (password.length < 6) return errEl.textContent = '密码至少需要 6 位';
     
     errEl.textContent = '注册中...';
-    const email = account + '@fitness.local';
-    
-    const { error } = await supabaseClient.auth.signUp({ email, password });
-    if (error) {
-      errEl.textContent = '注册失败: ' + error.message;
-    } else {
+    try {
+      const userId = await accountToUserId(account);
+      const existing = await fetchAccountRecord(userId);
+      if (existing?.custom_exercises?.__auth) {
+        errEl.textContent = '注册失败: 账号已存在';
+        return;
+      }
+      const authMeta = {
+        account: account.trim(),
+        password_hash: await passwordHashFor(account, password),
+        created_at: new Date().toISOString()
+      };
+      if (existing) {
+        const custom = { ...(existing.custom_exercises || {}), __auth: authMeta };
+        const { error } = await supabaseClient
+          .from('fitness_data')
+          .update({ custom_exercises: custom, updated_at: new Date().toISOString() })
+          .eq('user_id', userId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabaseClient.from('fitness_data').insert([{
+          user_id: userId,
+          exercises: emptyWorkoutPlan(),
+          custom_exercises: { __auth: authMeta }
+        }]);
+        if (error) throw error;
+      }
+      clearAuthSession();
+      IS_LOCAL_AUTH = false;
+      resetLocalState();
+      await IDBCache.clearAll();
+      errEl.textContent = '注册成功！';
+      setTimeout(() => {
+        document.getElementById('registerModal').classList.remove('open');
+        document.getElementById('authAccount').value = account;
+        document.getElementById('authPassword').value = password;
+      }, 1000);
+    } catch (error) {
+      if (!isRlsError(error)) {
+        errEl.textContent = '注册失败: ' + (error?.message || '网络异常');
+        return;
+      }
+
+      const key = normalizeAccount(account);
+      const accounts = getLocalAccounts();
+      if (accounts[key]) {
+        errEl.textContent = '注册失败: 账号已存在';
+        return;
+      }
+      const localUserId = await localUserIdFor(account);
+      accounts[key] = {
+        user_id: localUserId,
+        account: account.trim(),
+        password_hash: await passwordHashFor(account, password),
+        created_at: new Date().toISOString()
+      };
+      saveLocalAccounts(accounts);
+      clearAuthSession();
+      IS_LOCAL_AUTH = true;
+      resetLocalState();
+      await IDBCache.clearAll();
       errEl.textContent = '注册成功！';
       setTimeout(() => {
         document.getElementById('registerModal').classList.remove('open');
@@ -2447,7 +2621,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('btnLogout')?.addEventListener('click', async () => {
     closeSettings();
-    if (supabaseClient) await supabaseClient.auth.signOut();
+    clearAuthSession();
+    resetLocalState();
+    await IDBCache.clearAll();
+    isAppInitialized = false;
+    USER_ID = null;
+    IS_LOCAL_AUTH = false;
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('authScreen').style.display = 'flex';
   });
 
   // Tab bar events
