@@ -1115,137 +1115,11 @@ body {
   transform: translateX(-50%) translateY(0);
 }
 
-/* ========== AUTH PANEL ========== */
-#authScreen {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: var(--bg-primary);
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 30px;
-}
-.auth-box {
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-lg);
-  padding: 40px 20px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-  text-align: center;
-}
-.auth-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 8px;
-}
-.auth-subtitle {
-  font-size: 14px;
-  color: var(--text-secondary);
-  margin-bottom: 30px;
-}
-.auth-input {
-  width: 100%;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  font-size: 16px;
-  padding: 14px 16px;
-  margin-bottom: 16px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.auth-input:focus {
-  border-color: var(--accent);
-}
-.auth-btn-group {
-  display: flex;
-  gap: 12px;
-  margin-top: 10px;
-}
-.btn-auth {
-  flex: 1;
-  padding: 14px;
-  border-radius: var(--radius-sm);
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  transition: opacity 0.2s;
-}
-.btn-auth:active {
-  opacity: 0.8;
-}
-.btn-auth.primary {
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 4px 14px var(--accent-glow);
-}
-.btn-auth.secondary {
-  background: transparent;
-  color: var(--text-primary);
-  border: 1px solid var(--border-card);
-}
-#authError {
-  color: #ff3366;
-  font-size: 13px;
-  margin-top: 16px;
-  min-height: 20px;
-}
-.btn-logout {
-  width: 100%;
-  padding: 14px;
-  margin-top: 20px;
-  background: transparent;
-  border: 1px solid #ff3366;
-  color: #ff3366;
-  border-radius: var(--radius-sm);
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.btn-logout:active {
-  background: rgba(255,51,102,0.1);
-}
 </style>
 
 </head>
 <body>
-<div id="authScreen" style="display: none;">
-  <div class="auth-box">
-    <div class="auth-title">Fitness Plan</div>
-    <div class="auth-subtitle">记录每一次泵感</div>
-    <input type="text" id="authAccount" class="auth-input" placeholder="输入账号（任意字符）" autocomplete="username">
-    <input type="password" id="authPassword" class="auth-input" placeholder="输入密码" autocomplete="current-password">
-    <div class="auth-btn-group">
-      <button class="btn-auth secondary" id="btnShowRegister">去注册</button>
-      <button class="btn-auth primary" id="btnAuthLogin">登录</button>
-    </div>
-    <div id="authError"></div>
-  </div>
-</div>
-
-<!-- Register Modal -->
-<div class="modal-overlay" id="registerModal" style="z-index: 10000;">
-  <div class="modal-sheet settings-sheet" style="padding: 24px;">
-    <div class="settings-top">
-      <h2 class="modal-title">注册新账号</h2>
-      <button class="sheet-close" id="btnCloseRegister" aria-label="关闭">&times;</button>
-    </div>
-    <input type="text" id="regAccount" class="auth-input" placeholder="设置账号名称（任意字符）" style="margin-top: 10px;">
-    <input type="password" id="regPassword" class="auth-input" placeholder="设置密码 (至少6位)">
-    <button class="btn-auth primary" id="btnSubmitRegister" style="width: 100%; margin-top: 10px;">确认注册</button>
-    <div id="regError" style="color: #ff3366; font-size: 13px; margin-top: 12px; text-align: center; min-height: 20px;"></div>
-  </div>
-</div>
-
-<div id="app" style="display: none;">
+<div id="app">
 
 
 <!-- Floating Orbs Background -->
@@ -1377,7 +1251,6 @@ body {
     <p class="settings-copy">这里管理添加过的动作记录。删除记录不会影响今天已经添加的训练。</p>
     <div class="settings-parts" id="settingsParts"></div>
     <div id="libraryList"></div>
-    <button class="btn-logout" id="btnLogout">退出登录</button>
   </div>
 </div>
 
@@ -1439,7 +1312,7 @@ const SUPABASE_URL = 'https://owqhouyafggdzgcqwlji.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QgsSE7ZoIfcaPsJLlkfS5w_tGvRz_I6';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 if (!supabaseClient) console.warn('Supabase SDK not loaded — running in offline mode.');
-let USER_ID = null;
+let USER_ID = 'acct_ea19386cb88c1994b50e179fbb11a6ebfa903687';
 const AUTH_SESSION_KEY = 'fitness-plan-auth-session';
 const LOCAL_ACCOUNTS_KEY = 'fitness-plan-local-accounts';
 let IS_LOCAL_AUTH = false;
@@ -1842,6 +1715,16 @@ function setAccent(part) {
   s.setProperty('--accent-glow', GLOWS[part]);
 }
 
+function saveUIState() {
+  if (!Store._custom) Store._custom = {};
+  Store._custom.__ui_state = {
+    mode: currentMode,
+    activeTab: activeTab,
+    overviewParts: overviewSelectedParts
+  };
+  Store.save();
+}
+
 function switchMode(mode) {
   currentMode = mode;
   document.getElementById('modeOverview').classList.toggle('active', mode === 'overview');
@@ -1849,16 +1732,12 @@ function switchMode(mode) {
   renderChips();
 
   if (mode === 'overview') {
-    // Restore saved selection
-    try {
-      const saved = JSON.parse(localStorage.getItem('fitness-overview-parts') || '[]');
-      overviewSelectedParts = saved.filter(p => PARTS.includes(p));
-    } catch { overviewSelectedParts = []; }
     setAccent('chest');
     showOverviewPanel();
   } else {
     showSplitPanel(activeTab);
   }
+  saveUIState();
 }
 
 function renderChips() {
@@ -1885,10 +1764,10 @@ function onChipClick(part) {
     const idx = overviewSelectedParts.indexOf(part);
     if (idx >= 0) overviewSelectedParts.splice(idx, 1);
     else overviewSelectedParts.push(part);
-    localStorage.setItem('fitness-overview-parts', JSON.stringify(overviewSelectedParts));
     renderChips();
     renderOverviewPanel();
   }
+  saveUIState();
 }
 
 function showSplitPanel(part) {
@@ -1941,6 +1820,7 @@ function switchTab(part) {
   document.getElementById('modeSplit').classList.add('active');
   renderChips();
   showSplitPanel(part);
+  saveUIState();
 }
 
 /* ===============================================================
@@ -2683,92 +2563,6 @@ function resetLocalState() {
   Store._authMeta = null;
 }
 
-function normalizeAccount(account) {
-  return account.trim().toLowerCase();
-}
-
-async function hashText(text) {
-  if (window.crypto?.subtle) {
-    const data = new TextEncoder().encode(text);
-    const digest = await crypto.subtle.digest('SHA-256', data);
-    return Array.from(new Uint8Array(digest))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
-  }
-  let hash = 2166136261;
-  for (let i = 0; i < text.length; i++) {
-    hash ^= text.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0).toString(16).padStart(8, '0');
-}
-
-async function accountToUserId(account) {
-  const normalized = account.trim().toLowerCase();
-  const hash = await hashText(`fitness-plan-account:${normalized}`);
-  return `acct_${hash.slice(0, 40)}`;
-}
-
-async function passwordHashFor(account, password) {
-  return hashText(`fitness-plan-password:${normalizeAccount(account)}:${password}`);
-}
-
-function getAuthSession() {
-  try {
-    return JSON.parse(localStorage.getItem(AUTH_SESSION_KEY) || 'null');
-  } catch {
-    return null;
-  }
-}
-
-function setAuthSession(session) {
-  localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
-}
-
-function clearAuthSession() {
-  localStorage.removeItem(AUTH_SESSION_KEY);
-}
-
-function getLocalAccounts() {
-  try {
-    return JSON.parse(localStorage.getItem(LOCAL_ACCOUNTS_KEY) || '{}');
-  } catch {
-    return {};
-  }
-}
-
-function saveLocalAccounts(accounts) {
-  localStorage.setItem(LOCAL_ACCOUNTS_KEY, JSON.stringify(accounts));
-}
-
-async function localUserIdFor(account) {
-  const hash = await hashText(`fitness-plan-local-account:${normalizeAccount(account)}`);
-  return `local_${hash.slice(0, 40)}`;
-}
-
-function isRlsError(error) {
-  const msg = String(error?.message || error || '').toLowerCase();
-  return msg.includes('row-level security') || msg.includes('401') || msg.includes('rls');
-}
-
-async function fetchAccountRecord(userId) {
-  const { data, error } = await supabaseClient
-    .from('fitness_data')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-  if (error && !data) return null;
-  return data || null;
-}
-
-async function showAuthenticatedApp(userId, localOnly = false) {
-  USER_ID = userId;
-  IS_LOCAL_AUTH = localOnly;
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  await initializeApp();
-}
-
 async function initializeApp() {
   if (isAppInitialized) return;
   isAppInitialized = true;
@@ -2787,172 +2581,23 @@ async function initializeApp() {
 
   try { checkReset(); } catch (e) { console.error('Reset error:', e); }
   try { PARTS.forEach(p => renderExercises(p)); } catch (e) { console.error('Render error:', e); }
-  switchTab('chest');
+  
+  // Restore UI state
+  const state = Store._custom?.__ui_state || {};
+  if (state.overviewParts) overviewSelectedParts = state.overviewParts;
+  if (state.activeTab && PARTS.includes(state.activeTab)) activeTab = state.activeTab;
+  
+  if (state.mode === 'overview') {
+    switchMode('overview');
+  } else {
+    switchMode('split');
+    switchTab(activeTab || 'chest');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  if (!supabaseClient) {
-    // Offline / No SDK
-    USER_ID = 'offline_user';
-    document.getElementById('app').style.display = 'block';
-    initializeApp();
-  } else {
-    const session = getAuthSession();
-    if (session?.user_id) {
-      await showAuthenticatedApp(session.user_id, Boolean(session.local_only));
-    } else {
-      USER_ID = null;
-      IS_LOCAL_AUTH = false;
-      document.getElementById('app').style.display = 'none';
-      document.getElementById('authScreen').style.display = 'flex';
-      resetLocalState();
-      await IDBCache.clearAll();
-    }
-  }
-
-  // Auth Events
-  document.getElementById('btnAuthLogin')?.addEventListener('click', async () => {
-    const account = document.getElementById('authAccount').value.trim();
-    const password = document.getElementById('authPassword').value;
-    const errEl = document.getElementById('authError');
-    if (!account || !password) return errEl.textContent = '请输入账号和密码';
-    errEl.textContent = '登录中...';
-    
-    try {
-      const userId = await accountToUserId(account);
-      const record = await fetchAccountRecord(userId);
-      const expected = record?.custom_exercises?.__auth?.password_hash;
-      const actual = await passwordHashFor(account, password);
-      if (expected && expected === actual) {
-        errEl.textContent = '';
-        setAuthSession({ user_id: userId, account: account.trim(), local_only: false });
-        await IDBCache.clearAll();
-        await showAuthenticatedApp(userId, false);
-        return;
-      }
-
-      const accounts = getLocalAccounts();
-      const local = accounts[normalizeAccount(account)];
-      if (local?.password_hash === actual) {
-        errEl.textContent = '';
-        setAuthSession({ user_id: local.user_id, account: account.trim(), local_only: true });
-        await IDBCache.clearAll();
-        await showAuthenticatedApp(local.user_id, true);
-        return;
-      }
-
-      errEl.textContent = '登录失败: 账号或密码不正确';
-    } catch (error) {
-      errEl.textContent = '登录失败: ' + (error?.message || '网络异常');
-    }
-  });
-
-  document.getElementById('btnShowRegister')?.addEventListener('click', () => {
-    document.getElementById('registerModal').classList.add('open');
-  });
-
-  document.getElementById('btnCloseRegister')?.addEventListener('click', () => {
-    document.getElementById('registerModal').classList.remove('open');
-    document.getElementById('regError').textContent = '';
-  });
-  
-  document.getElementById('registerModal')?.addEventListener('click', e => {
-    if (e.target === e.currentTarget) {
-      document.getElementById('registerModal').classList.remove('open');
-      document.getElementById('regError').textContent = '';
-    }
-  });
-
-  document.getElementById('btnSubmitRegister')?.addEventListener('click', async () => {
-    const account = document.getElementById('regAccount').value.trim();
-    const password = document.getElementById('regPassword').value;
-    const errEl = document.getElementById('regError');
-    
-    if (!account || !password) return errEl.textContent = '请输入账号和密码';
-    if (password.length < 6) return errEl.textContent = '密码至少需要 6 位';
-    
-    errEl.textContent = '注册中...';
-    try {
-      const userId = await accountToUserId(account);
-      const existing = await fetchAccountRecord(userId);
-      if (existing?.custom_exercises?.__auth) {
-        errEl.textContent = '注册失败: 账号已存在';
-        return;
-      }
-      const authMeta = {
-        account: account.trim(),
-        password_hash: await passwordHashFor(account, password),
-        created_at: new Date().toISOString()
-      };
-      if (existing) {
-        const custom = { ...(existing.custom_exercises || {}), __auth: authMeta };
-        const { error } = await supabaseClient
-          .from('fitness_data')
-          .update({ custom_exercises: custom, updated_at: new Date().toISOString() })
-          .eq('user_id', userId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabaseClient.from('fitness_data').insert([{
-          user_id: userId,
-          exercises: emptyWorkoutPlan(),
-          custom_exercises: { __auth: authMeta }
-        }]);
-        if (error) throw error;
-      }
-      clearAuthSession();
-      IS_LOCAL_AUTH = false;
-      resetLocalState();
-      await IDBCache.clearAll();
-      errEl.textContent = '注册成功！';
-      setTimeout(() => {
-        document.getElementById('registerModal').classList.remove('open');
-        document.getElementById('authAccount').value = account;
-        document.getElementById('authPassword').value = password;
-      }, 1000);
-    } catch (error) {
-      if (!isRlsError(error)) {
-        errEl.textContent = '注册失败: ' + (error?.message || '网络异常');
-        return;
-      }
-
-      const key = normalizeAccount(account);
-      const accounts = getLocalAccounts();
-      if (accounts[key]) {
-        errEl.textContent = '注册失败: 账号已存在';
-        return;
-      }
-      const localUserId = await localUserIdFor(account);
-      accounts[key] = {
-        user_id: localUserId,
-        account: account.trim(),
-        password_hash: await passwordHashFor(account, password),
-        created_at: new Date().toISOString()
-      };
-      saveLocalAccounts(accounts);
-      clearAuthSession();
-      IS_LOCAL_AUTH = true;
-      resetLocalState();
-      await IDBCache.clearAll();
-      errEl.textContent = '注册成功！';
-      setTimeout(() => {
-        document.getElementById('registerModal').classList.remove('open');
-        document.getElementById('authAccount').value = account;
-        document.getElementById('authPassword').value = password;
-      }, 1000);
-    }
-  });
-
-  document.getElementById('btnLogout')?.addEventListener('click', async () => {
-    closeSettings();
-    clearAuthSession();
-    resetLocalState();
-    await IDBCache.clearAll();
-    isAppInitialized = false;
-    USER_ID = null;
-    IS_LOCAL_AUTH = false;
-    document.getElementById('app').style.display = 'none';
-    document.getElementById('authScreen').style.display = 'flex';
-  });
+  document.getElementById('app').style.display = 'block';
+  await initializeApp();
 
   // Bottom nav: mode bar events
   document.querySelector('.mode-bar').addEventListener('click', e => {
