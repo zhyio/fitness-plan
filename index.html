@@ -37,7 +37,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
-  --tab-h: 64px;
+  --tab-h: 70px;
 }
 
 /* ========== RESET ========== */
@@ -223,10 +223,10 @@ body {
   gap: 10px;
 }
 .settings-trigger {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 11px;
+  border-radius: 12px;
   background: rgba(255,255,255,0.04);
   color: var(--text-secondary);
   display: flex;
@@ -235,7 +235,7 @@ body {
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.15s;
 }
-.settings-trigger svg { width: 18px; height: 18px; }
+.settings-trigger svg { width: 20px; height: 20px; }
 .settings-trigger:active {
   color: var(--accent);
   border-color: var(--accent-glow);
@@ -414,13 +414,13 @@ body {
   margin-bottom: 12px;
 }
 .set-circle {
-  width: clamp(36px, 10vw, 44px);
-  height: clamp(36px, 10vw, 44px);
+  width: clamp(40px, 11vw, 48px);
+  height: clamp(40px, 11vw, 48px);
   border-radius: 50%;
   border: 2px solid var(--accent);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  font-size: clamp(12px, 3.5vw, 14px);
+  font-size: clamp(13px, 3.8vw, 15px);
   font-weight: 600;
   color: var(--text-secondary);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -531,7 +531,7 @@ body {
   flex: 1;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  gap: 2px;
+  gap: 3px;
   color: var(--text-dim);
   background: none; border: none;
   cursor: pointer;
@@ -539,12 +539,13 @@ body {
   touch-action: manipulation;
   font-family: inherit;
   position: relative;
+  padding: 4px 0;
 }
 .tab-item.active {
   color: var(--accent);
 }
 .tab-icon {
-  width: 25px; height: 25px;
+  width: 28px; height: 28px;
   overflow: visible;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
               filter 0.3s ease;
@@ -559,8 +560,8 @@ body {
   transition: opacity 0.3s ease;
 }
 .tab-item.active .tab-icon {
-  transform: translateY(-2px) scale(1.1);
-  filter: drop-shadow(0 0 6px var(--accent-glow));
+  transform: translateY(-2px) scale(1.12);
+  filter: drop-shadow(0 0 8px var(--accent-glow));
 }
 .tab-item.active .tab-icon .icon-accent {
   opacity: 0.28;
@@ -568,7 +569,7 @@ body {
 .tab-item.active .tab-icon .icon-cheek {
   opacity: 0.95;
 }
-.tab-label { font-size: 10px; font-weight: 500; }
+.tab-label { font-size: 11px; font-weight: 500; letter-spacing: 0.3px; }
 
 /* Tab Slide Indicator */
 .tab-indicator {
@@ -860,33 +861,12 @@ body {
   justify-content: center;
   font-size: 12px;
 }
-.set-circle {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
+/* Note: .set-circle base styles are defined above in SET CIRCLES section.
+   Below are contextual overrides for bonus sets only. */
 .set-circle.bonus {
   opacity: 0.5;
   background: rgba(255, 255, 255, 0.02);
   border: 1px dashed rgba(255, 255, 255, 0.2);
-}
-.set-circle.done {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
 }
 .set-circle.bonus.done {
   opacity: 1;
@@ -968,6 +948,68 @@ body {
 
 /* ========== SCROLLBAR ========== */
 ::-webkit-scrollbar { width: 0; background: transparent; }
+
+/* ========== MOBILE RESPONSIVE ENHANCEMENTS ========== */
+@media (max-width: 430px) {
+  .exercise-card {
+    padding: clamp(16px, 4.5vw, 22px);
+    margin-bottom: 14px;
+  }
+  .card-header {
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .card-name {
+    font-size: clamp(15.5px, 4.2vw, 18px);
+  }
+  .card-weight {
+    font-size: 13.5px;
+    padding: 4px 11px;
+  }
+  .set-row {
+    gap: clamp(8px, 2.5vw, 12px);
+    margin-bottom: 14px;
+  }
+  .set-circle {
+    width: clamp(42px, 11.5vw, 48px);
+    height: clamp(42px, 11.5vw, 48px);
+    font-size: clamp(13.5px, 4vw, 15px);
+  }
+  .card-info {
+    font-size: 13.5px;
+    margin-bottom: 14px;
+  }
+  .technique-btn {
+    min-height: 32px;
+    padding: 0 11px;
+    font-size: 12px;
+  }
+  .tab-icon {
+    width: 30px; height: 30px;
+  }
+  .tab-label {
+    font-size: 11.5px;
+  }
+  .btn-delete {
+    font-size: 24px;
+    padding: 6px 8px;
+  }
+  .settings-trigger {
+    width: 42px;
+    height: 42px;
+  }
+  .settings-trigger svg {
+    width: 21px;
+    height: 21px;
+  }
+}
+
+/* Extra enhancements for larger phones (iPhone Pro Max, etc.) */
+@media (min-width: 390px) and (max-width: 430px) {
+  .tab-item {
+    gap: 4px;
+  }
+}
 
 /* ========== TOAST ========== */
 .toast {
