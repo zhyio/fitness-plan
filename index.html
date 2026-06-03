@@ -11,6 +11,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="512x512" href="assets/icons/app-icon-512.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -45,7 +46,11 @@
 
 /* ========== GLOBAL ========== */
 body {
-  background: var(--bg-primary);
+  background:
+    radial-gradient(circle at 18% -10%, rgba(255, 51, 102, 0.22), transparent 34%),
+    radial-gradient(circle at 90% 22%, rgba(41, 121, 255, 0.18), transparent 30%),
+    radial-gradient(circle at 50% 105%, rgba(0, 215, 199, 0.14), transparent 34%),
+    var(--bg-primary);
   color: var(--text-primary);
   font-family: -apple-system, 'SF Pro Display', 'PingFang SC', system-ui, sans-serif;
   min-height: 100dvh;
@@ -279,6 +284,10 @@ body {
   padding: 4px clamp(12px, 4vw, 20px) 16px;
   position: relative;
   z-index: 1;
+  transition: padding-right 0.25s ease;
+}
+.tab-panels.split-mode {
+  padding-right: calc(clamp(12px, 4vw, 20px) + 58px);
 }
 .tab-panel {
   display: none;
@@ -511,6 +520,50 @@ body {
 }
 .fab:active { transform: scale(0.88); }
 .fab.hidden { display: none; }
+
+/* ========== BODY PART SHORTCUT RAIL ========== */
+.part-rail {
+  position: fixed;
+  right: clamp(16px, 5vw, 24px);
+  bottom: calc(var(--tab-h) + var(--safe-bottom) + 86px);
+  z-index: 59;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.part-rail.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px) scale(0.96);
+}
+.part-shortcut {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.08);
+  background: rgba(20,20,30,0.68);
+  color: var(--text-secondary);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.part-shortcut.active {
+  color: #fff;
+  border-color: var(--part-color);
+  background: color-mix(in srgb, var(--part-color) 34%, rgba(20,20,30,0.72));
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--part-color) 42%, transparent);
+}
+.part-shortcut:active {
+  transform: scale(0.88);
+}
 
 /* ========== BOTTOM NAVIGATION ========== */
 .bottom-nav {
@@ -772,6 +825,54 @@ body {
   background: var(--accent);
   box-shadow: 0 3px 14px var(--accent-glow);
 }
+.library-add {
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.035);
+}
+.library-add-title {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+.library-add-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(58px, 0.7fr) minmax(58px, 0.7fr) minmax(72px, 0.8fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.library-add .form-input {
+  height: 40px;
+  font-size: 14px;
+  padding: 0 10px;
+}
+.library-add-btn {
+  width: 100%;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px var(--accent-glow);
+  transition: transform 0.15s;
+}
+.library-add-btn:active { transform: scale(0.96); }
+@media (max-width: 380px) {
+  .library-add-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .library-add-grid .form-input:first-child {
+    grid-column: 1 / -1;
+  }
+}
 .library-item {
   display: flex;
   align-items: center;
@@ -925,6 +1026,8 @@ body {
 .calendar-cell.has-record {
   color: var(--text-primary);
   font-weight: 600;
+  background: color-mix(in srgb, var(--accent) var(--heat, 20%), rgba(255,255,255,0.04));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 0 10px color-mix(in srgb, var(--accent) var(--heat, 20%), transparent);
 }
 .calendar-cell.has-record::after {
   content: '';
@@ -1172,6 +1275,7 @@ body {
 
 <!-- FAB -->
 <button class="fab" id="fabAdd" aria-label="添加动作">+</button>
+<div class="part-rail" id="partRail" aria-label="部位快捷切换"></div>
 
 <!-- Bottom Navigation -->
 <nav class="bottom-nav" id="bottomNav">
@@ -1208,15 +1312,15 @@ body {
     <div class="form-row">
       <div class="form-group">
         <label class="form-label">组数</label>
-        <input class="form-input" type="number" id="inputSets" value="4" min="1" max="20" inputmode="numeric">
+        <input class="form-input" type="number" id="inputSets" value="4" min="1" max="50" inputmode="numeric">
       </div>
       <div class="form-group">
         <label class="form-label">次数</label>
-        <input class="form-input" type="number" id="inputReps" value="12" min="1" max="100" inputmode="numeric">
+        <input class="form-input" type="number" id="inputReps" value="12" min="1" max="300" inputmode="numeric">
       </div>
       <div class="form-group">
         <label class="form-label">重量(kg)</label>
-        <input class="form-input" type="number" id="inputWeight" value="20" min="0" step="2.5" inputmode="decimal">
+        <input class="form-input" type="number" id="inputWeight" value="20" min="0" max="999" step="2.5" inputmode="decimal">
       </div>
     </div>
     <button class="btn-save" id="btnSave">保存</button>
@@ -1250,6 +1354,16 @@ body {
     </div>
     <p class="settings-copy">这里管理添加过的动作记录。删除记录不会影响今天已经添加的训练。</p>
     <div class="settings-parts" id="settingsParts"></div>
+    <div class="library-add">
+      <span class="library-add-title">新增动作模板</span>
+      <div class="library-add-grid">
+        <input class="form-input" type="text" id="libraryInputName" placeholder="动作名称" autocomplete="off">
+        <input class="form-input" type="number" id="libraryInputSets" value="4" min="1" max="50" inputmode="numeric" aria-label="组数">
+        <input class="form-input" type="number" id="libraryInputReps" value="12" min="1" max="300" inputmode="numeric" aria-label="次数">
+        <input class="form-input" type="number" id="libraryInputWeight" value="20" min="0" max="999" step="2.5" inputmode="decimal" aria-label="重量">
+      </div>
+      <button class="library-add-btn" id="btnAddTemplate" type="button">保存模板</button>
+    </div>
     <div id="libraryList"></div>
   </div>
 </div>
@@ -1312,19 +1426,27 @@ const SUPABASE_URL = 'https://owqhouyafggdzgcqwlji.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_QgsSE7ZoIfcaPsJLlkfS5w_tGvRz_I6';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 if (!supabaseClient) console.warn('Supabase SDK not loaded — running in offline mode.');
-let USER_ID = 'acct_ea19386cb88c1994b50e179fbb11a6ebfa903687';
-const AUTH_SESSION_KEY = 'fitness-plan-auth-session';
-const LOCAL_ACCOUNTS_KEY = 'fitness-plan-local-accounts';
-let IS_LOCAL_AUTH = false;
+const USER_ID = '87553652@qq.com';
+const UI_STATE_KEY = 'fitness-plan-ui-state';
+const MAX_TARGET_SETS = 50;
+const MAX_REPS = 300;
+const MAX_WEIGHT = 999;
+let realtimeChannel = null;
+let realtimeBroadcastReady = false;
+let localSyncChannel = null;
+let isApplyingSyncedState = false;
 
 const PARTS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
 const ALL_TABS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
 const LABELS = { chest:'胸', shoulder:'肩', legs:'腿', back:'背', abs:'腹' };
-const COLORS = { chest:'#ff3366', shoulder:'#ff9933', legs:'#00e676', back:'#6366f1', abs:'#00d7c7', stats:'#e040fb' };
-const GLOWS  = {
-  chest:'rgba(255,51,102,0.2)', shoulder:'rgba(255,153,51,0.2)',
-  legs:'rgba(0,230,118,0.2)', back:'rgba(99,102,241,0.2)',
-  abs:'rgba(0,215,199,0.2)', stats:'rgba(224,64,251,0.2)'
+const COLOR_FALLBACKS = { chest:'#ff3366', shoulder:'#ff9933', legs:'#00e676', back:'#2979ff', abs:'#00d7c7', stats:'#e040fb' };
+const COLOR_VARS = {
+  chest:'--accent-chest',
+  shoulder:'--accent-shoulder',
+  legs:'--accent-legs',
+  back:'--accent-back',
+  abs:'--accent-abs',
+  stats:'--accent-history'
 };
 
 function emptyWorkoutPlan() {
@@ -1424,6 +1546,47 @@ function mergeTemplates(custom = {}) {
   return merged;
 }
 
+function getSavedUIState() {
+  try {
+    return JSON.parse(localStorage.getItem(UI_STATE_KEY) || '{}') || {};
+  } catch {
+    return {};
+  }
+}
+
+function setSavedUIState(state) {
+  try {
+    localStorage.setItem(UI_STATE_KEY, JSON.stringify(state));
+  } catch (e) {
+    console.warn('UI state save error:', e);
+  }
+}
+
+function clampNumber(value, min, max, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+function getPartColor(part) {
+  const varName = COLOR_VARS[part];
+  if (!varName) return COLOR_FALLBACKS[part] || COLOR_FALLBACKS.chest;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return value || COLOR_FALLBACKS[part] || COLOR_FALLBACKS.chest;
+}
+
+function getPartGlow(part) {
+  return `color-mix(in srgb, ${getPartColor(part)} 28%, transparent)`;
+}
+
+function packCustomExercises() {
+  return {
+    ...Store._custom,
+    __history: Store._history.slice(-90),
+    ...(Store._authMeta ? { __auth: Store._authMeta } : {})
+  };
+}
+
 /* ===============================================================
    IndexedDB CACHE LAYER
    =============================================================== */
@@ -1517,6 +1680,9 @@ const Store = {
   _lastReset: '',
   _history: [],
   _authMeta: null,
+  _remoteId: null,
+  _remoteTimer: null,
+  _remoteUnavailable: false,
 
   async init() {
     // 1) 先从 IndexedDB 读取缓存（离线可用 & 快速启动）
@@ -1527,7 +1693,7 @@ const Store = {
         
         this._authMeta = cached.auth_meta || cached.custom_exercises?.__auth || null;
         let custom = cached.custom_exercises || {};
-        let count = Object.values(custom).reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
+        let count = PARTS.reduce((sum, part) => sum + (Array.isArray(custom[part]) ? custom[part].length : 0), 0);
         // 如果自定义动作库较少（< 15个），说明可能是新用户或之前没有预设数据，使用合并逻辑
         if (count < 15) {
           this._custom = mergeTemplates(custom);
@@ -1538,28 +1704,38 @@ const Store = {
         
         this._lastReset = cached.last_reset || '';
       }
-      this._history = await IDBCache.getAllHistory();
+      this._history = Array.isArray(cached?.history)
+        ? cached.history
+        : await IDBCache.getAllHistory();
     } catch (e) {
       console.warn('IDB read error:', e);
     }
 
     // 2) 后台拉取 Supabase 最新数据（联网时合并）
     try {
-      if (!supabaseClient || IS_LOCAL_AUTH) throw new Error('No supabase client');
+      if (!navigator.onLine) throw new Error('Browser offline');
+      if (!supabaseClient) throw new Error('No supabase client');
       const { data, error } = await supabaseClient
         .from('fitness_data')
         .select('*')
         .eq('user_id', USER_ID)
-        .single();
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
 
       if (data) {
         // Supabase 数据作为权威来源
+        this._remoteId = data.id || null;
         this._d = { ...emptyWorkoutPlan(), ...(data.exercises || {}) };
         this._lastReset = data.last_reset || this._lastReset;
+        this._history = Array.isArray(data.history)
+          ? data.history
+          : (Array.isArray(data.custom_exercises?.__history) ? data.custom_exercises.__history : this._history);
         
         this._authMeta = data.custom_exercises?.__auth || null;
         let remoteCustom = data.custom_exercises || {};
-        let count = Object.values(remoteCustom).reduce((sum, arr) => sum + (arr ? arr.length : 0), 0);
+        let count = PARTS.reduce((sum, part) => sum + (Array.isArray(remoteCustom[part]) ? remoteCustom[part].length : 0), 0);
         if (count < 15) {
           this._custom = mergeTemplates(remoteCustom);
           this.save(); // 存回覆盖，并同步到远程数据库
@@ -1569,10 +1745,13 @@ const Store = {
           await this._saveToIDB();
         }
       } else {
-        await supabaseClient.from('fitness_data').insert([{ user_id: USER_ID }]);
+        this._remoteUnavailable = true;
+        console.warn(`Supabase row for ${USER_ID} was not found; using local/PWA storage until the backend row is created.`);
       }
     } catch (e) {
-      console.warn('Supabase load error (offline mode):', e);
+      if (e.message !== 'Browser offline') {
+        console.warn('Supabase load error (offline mode):', e);
+      }
     }
   },
 
@@ -1583,7 +1762,8 @@ const Store = {
       exercises: this._d,
       custom_exercises: this._custom,
       auth_meta: this._authMeta,
-      last_reset: this._lastReset
+      last_reset: this._lastReset,
+      history: this._history.slice(-90)
     });
   },
 
@@ -1592,15 +1772,35 @@ const Store = {
     this._saveToIDB();
 
     // 异步写入 Supabase（Optimistic UI）
-    if (supabaseClient && !IS_LOCAL_AUTH) {
-      supabaseClient.from('fitness_data').update({
-        exercises: this._d,
-        custom_exercises: { ...this._custom, ...(this._authMeta ? { __auth: this._authMeta } : {}) },
-        last_reset: this._lastReset,
-        updated_at: new Date().toISOString()
-      }).eq('user_id', USER_ID).then(({ error }) => {
-        if (error) console.warn('Supabase sync error:', error);
-      });
+    this.scheduleRemoteSync();
+    broadcastState();
+  },
+
+  scheduleRemoteSync() {
+    if (!navigator.onLine || !supabaseClient || this._remoteUnavailable || !this._remoteId) return;
+    clearTimeout(this._remoteTimer);
+    this._remoteTimer = setTimeout(() => this._syncRemoteNow(), 350);
+  },
+
+  async _syncRemoteNow() {
+    if (!navigator.onLine || !supabaseClient || this._remoteUnavailable || !this._remoteId) return;
+    const payload = {
+      user_id: USER_ID,
+      exercises: this._d,
+      custom_exercises: packCustomExercises(),
+      last_reset: this._lastReset,
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      const { error } = await supabaseClient
+        .from('fitness_data')
+        .update(payload)
+        .eq('id', this._remoteId);
+      if (error) throw error;
+    } catch (error) {
+      this._remoteUnavailable = true;
+      console.warn('Supabase sync error:', error);
     }
   },
 
@@ -1638,14 +1838,10 @@ const Store = {
     this._history.push(entry);
     await IDBCache.addHistory(entry);
     // Also sync to Supabase (fire & forget)
-    if (supabaseClient && !IS_LOCAL_AUTH) {
-      supabaseClient.from('fitness_data').update({
-        history: this._history.slice(-90), // keep last 90 entries
-        updated_at: new Date().toISOString()
-      }).eq('user_id', USER_ID).then(({ error }) => {
-        if (error) console.warn('Supabase history sync error:', error);
-      });
+    if (supabaseClient) {
+      this.scheduleRemoteSync();
     }
+    broadcastState();
   }
 };
 
@@ -1666,7 +1862,9 @@ function checkReset() {
 
     // === 保存历史快照 ===
     let anyData = false;
-    const snapshot = { date: boundary.toISOString().slice(0, 10), parts: {} };
+    const snapshotDate = new Date(boundary);
+    snapshotDate.setDate(snapshotDate.getDate() - 1);
+    const snapshot = { date: snapshotDate.toISOString().slice(0, 10), parts: {} };
     for (const p of PARTS) {
       if (data[p] && data[p].length) {
         const completed = data[p].filter(ex =>
@@ -1711,17 +1909,19 @@ let overviewSelectedParts = [];
 
 function setAccent(part) {
   const s = document.documentElement.style;
-  s.setProperty('--accent', COLORS[part]);
-  s.setProperty('--accent-glow', GLOWS[part]);
+  s.setProperty('--accent', getPartColor(part));
+  s.setProperty('--accent-glow', getPartGlow(part));
 }
 
 function saveUIState() {
-  if (!Store._custom) Store._custom = {};
-  Store._custom.__ui_state = {
+  const state = {
     mode: currentMode,
     activeTab: activeTab,
     overviewParts: overviewSelectedParts
   };
+  setSavedUIState(state);
+  if (!Store._custom) Store._custom = {};
+  Store._custom.__ui_state = state;
   Store.save();
 }
 
@@ -1730,6 +1930,7 @@ function switchMode(mode) {
   document.getElementById('modeOverview').classList.toggle('active', mode === 'overview');
   document.getElementById('modeSplit').classList.toggle('active', mode === 'split');
   renderChips();
+  renderPartRail();
 
   if (mode === 'overview') {
     setAccent('chest');
@@ -1745,14 +1946,27 @@ function renderChips() {
   if (currentMode === 'split') {
     container.innerHTML = PARTS.map(part => {
       const active = part === activeTab;
-      return `<button class="chip-item${active ? ' active' : ''}" data-chip-part="${part}" style="--chip-color: ${COLORS[part]}">${LABELS[part]}</button>`;
+      return `<button class="chip-item${active ? ' active' : ''}" data-chip-part="${part}" style="--chip-color: ${getPartColor(part)}">${LABELS[part]}</button>`;
     }).join('');
   } else {
     container.innerHTML = PARTS.map(part => {
       const active = overviewSelectedParts.includes(part);
-      return `<button class="chip-item${active ? ' active' : ''}" data-chip-part="${part}" style="--chip-color: ${COLORS[part]}">${LABELS[part]}</button>`;
+      return `<button class="chip-item${active ? ' active' : ''}" data-chip-part="${part}" style="--chip-color: ${getPartColor(part)}">${LABELS[part]}</button>`;
     }).join('');
   }
+}
+
+function renderPartRail() {
+  const rail = document.getElementById('partRail');
+  rail.classList.toggle('hidden', currentMode !== 'split');
+  rail.innerHTML = PARTS.map(part => `
+    <button
+      class="part-shortcut${part === activeTab ? ' active' : ''}"
+      data-rail-part="${part}"
+      style="--part-color: ${getPartColor(part)}"
+      aria-label="切换到${LABELS[part]}部训练"
+    >${LABELS[part]}</button>
+  `).join('');
 }
 
 function onChipClick(part) {
@@ -1760,12 +1974,14 @@ function onChipClick(part) {
     activeTab = part;
     showSplitPanel(part);
     renderChips();
+    renderPartRail();
   } else {
     const idx = overviewSelectedParts.indexOf(part);
     if (idx >= 0) overviewSelectedParts.splice(idx, 1);
     else overviewSelectedParts.push(part);
     renderChips();
     renderOverviewPanel();
+    updateOverviewProgress();
   }
   saveUIState();
 }
@@ -1778,37 +1994,45 @@ function showSplitPanel(part) {
     el.classList.toggle('active', el.dataset.part === part);
   });
   document.getElementById('panel-overview').classList.remove('active');
+  document.querySelector('.tab-panels').classList.add('split-mode');
 
   document.getElementById('headerTitle').textContent = LABELS[part];
   document.getElementById('fabAdd').classList.remove('hidden');
+  renderPartRail();
   updateProgress(part);
 }
 
 function showOverviewPanel() {
   document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
   document.getElementById('panel-overview').classList.add('active');
+  document.querySelector('.tab-panels').classList.remove('split-mode');
   document.getElementById('headerTitle').textContent = '今日总览';
   document.getElementById('fabAdd').classList.add('hidden');
+  renderPartRail();
   renderOverviewPanel();
   updateOverviewProgress();
 }
 
 function updateOverviewProgress() {
   const data = Store.load();
-  let total = 0, done = 0;
+  let total = 0, done = 0, bonusDone = 0;
   for (const part of overviewSelectedParts) {
     const exs = data[part];
     if (!exs) continue;
     for (const ex of exs) {
       total += ex.sets;
-      if (ex.completedSets) done += Math.min(ex.completedSets.filter(Boolean).length, ex.sets);
+      if (ex.completedSets) {
+        const counts = getSetCounts(ex);
+        done += counts.targetDone;
+        bonusDone += counts.bonusDone;
+      }
     }
   }
   const pct = total ? Math.round(done / total * 100) : 0;
   const fill = document.getElementById('progressFill');
   const text = document.getElementById('progressText');
   fill.style.width = pct + '%';
-  const newText = total ? `${done}/${total} 组 · ${pct}%` : '选择部位开始训练';
+  const newText = total ? `${done}/${total} 组${bonusDone ? ` · +${bonusDone}` : ''} · ${pct}%` : '选择部位开始训练';
   if (text.textContent !== newText) text.textContent = newText;
 }
 
@@ -1819,6 +2043,7 @@ function switchTab(part) {
   document.getElementById('modeOverview').classList.remove('active');
   document.getElementById('modeSplit').classList.add('active');
   renderChips();
+  renderPartRail();
   showSplitPanel(part);
   saveUIState();
 }
@@ -1834,6 +2059,20 @@ function esc(s) {
 
 function escAttr(s) {
   return esc(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function getSetCounts(ex) {
+  const completed = ex.completedSets || [];
+  const actualDone = completed.filter(Boolean).length;
+  const targetDone = Math.min(actualDone, ex.sets || 0);
+  const bonusDone = Math.max(0, actualDone - (ex.sets || 0));
+  const pct = ex.sets ? Math.round(targetDone / ex.sets * 100) : 0;
+  return { actualDone, targetDone, bonusDone, pct };
+}
+
+function formatSetProgress(ex) {
+  const counts = getSetCounts(ex);
+  return `${counts.targetDone}/${ex.sets} 目标组${counts.bonusDone ? ` · +${counts.bonusDone} 过量` : ''}`;
 }
 
 function renderExercises(part) {
@@ -1858,9 +2097,8 @@ function renderExercises(part) {
       for(let j=0; j<Math.min(totalSets, old.length); j++) completedSets[j] = old[j];
       ex.completedSets = completedSets;
     }
-    const done = completedSets.filter(Boolean).length;
-    const progressDone = Math.min(done, ex.sets);
-    const allDone = progressDone === ex.sets;
+    const counts = getSetCounts(ex);
+    const allDone = counts.targetDone === ex.sets;
     const hasTechnique = Boolean((ex.technique || '').trim());
     return `<div class="exercise-card${allDone ? ' all-done' : ''}" data-idx="${i}" style="animation-delay:${i * 0.07}s">
       <div class="card-header">
@@ -1878,8 +2116,8 @@ function renderExercises(part) {
         }).join('')}
       </div>
       <div class="card-footer">
-        <span class="card-progress">${done}/${ex.sets} 组</span>
-        <span class="card-pct">${ex.sets ? Math.round(progressDone / ex.sets * 100) : 0}%</span>
+        <span class="card-progress">${formatSetProgress(ex)}</span>
+        <span class="card-pct">${counts.pct}%</span>
       </div>
     </div>`;
   }).join('');
@@ -1935,12 +2173,11 @@ function toggleSet(exIdx, setIdx) {
   }
 
   // Update footer
-  const done = ex.completedSets.filter(Boolean).length;
-  const progressDone = Math.min(done, ex.sets);
-  card.querySelector('.card-progress').textContent = `${done}/${ex.sets} 组`;
-  card.querySelector('.card-pct').textContent = `${ex.sets ? Math.round(progressDone / ex.sets * 100) : 0}%`;
+  const counts = getSetCounts(ex);
+  card.querySelector('.card-progress').textContent = formatSetProgress(ex);
+  card.querySelector('.card-pct').textContent = `${counts.pct}%`;
 
-  const allDone = progressDone === ex.sets;
+  const allDone = counts.targetDone === ex.sets;
   card.classList.toggle('all-done', allDone);
 
   // Celebrate if just completed all sets!
@@ -2007,14 +2244,14 @@ function saveTechnique() {
    =============================================================== */
 function updateProgress(part) {
   const exercises = Store.load()[part];
-  let totalSets = 0, doneForPct = 0, doneActual = 0;
+  let totalSets = 0, doneForPct = 0, bonusDone = 0;
   if (exercises) {
     for (const ex of exercises) {
       totalSets += ex.sets;
       if (ex.completedSets) {
-        const d = ex.completedSets.filter(Boolean).length;
-        doneActual += d;
-        doneForPct += Math.min(d, ex.sets);
+        const counts = getSetCounts(ex);
+        doneForPct += counts.targetDone;
+        bonusDone += counts.bonusDone;
       }
     }
   }
@@ -2024,7 +2261,9 @@ function updateProgress(part) {
 
   fill.style.width = pct + '%';
 
-  const newText = totalSets ? `${doneActual}/${totalSets} 组 · ${pct}%` : '暂无动作';
+  const newText = totalSets
+    ? `${doneForPct}/${totalSets} 组${bonusDone ? ` · +${bonusDone}` : ''} · ${pct}%`
+    : '暂无动作';
   if (text.textContent !== newText) {
     text.textContent = newText;
     text.classList.remove('pop');
@@ -2078,6 +2317,13 @@ function renderCalendar() {
   
   const history = Store.getHistory();
   const historyDates = new Set(history.map(h => h.date));
+  const historyLoad = new Map(history.map(h => {
+    let total = 0;
+    for (const part of PARTS) {
+      for (const ex of (h.parts?.[part] || [])) total += Number(ex.done) || 0;
+    }
+    return [h.date, total];
+  }));
   
   let html = '';
   // Empty cells before start of month
@@ -2092,8 +2338,10 @@ function renderCalendar() {
     const classes = ['calendar-cell'];
     if (hasRecord) classes.push('has-record');
     if (isSelected) classes.push('selected');
+    const load = historyLoad.get(dStr) || 0;
+    const heat = hasRecord ? Math.min(72, 18 + load * 6) : 0;
     
-    html += `<div class="${classes.join(' ')}" onclick="selectDate('${dStr}')">${d}</div>`;
+    html += `<div class="${classes.join(' ')}" style="${hasRecord ? `--heat:${heat}%` : ''}" onclick="selectDate('${dStr}')">${d}</div>`;
   }
   
   document.getElementById('calendarDates').innerHTML = html;
@@ -2269,6 +2517,115 @@ function showToast(msg) {
   toast._timer = setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
+function refreshVisibleUI() {
+  PARTS.forEach(p => renderExercises(p));
+  if (currentMode === 'overview') {
+    renderOverviewPanel();
+    updateOverviewProgress();
+  } else {
+    showSplitPanel(activeTab);
+    renderChips();
+  }
+}
+
+function applySyncedPayload(payload) {
+  if (!payload || payload.user_id !== USER_ID) return;
+  isApplyingSyncedState = true;
+  Store._d = { ...emptyWorkoutPlan(), ...(payload.exercises || {}) };
+  Store._custom = mergeTemplates(payload.custom_exercises || {});
+  Store._lastReset = payload.last_reset || Store._lastReset;
+  Store._history = Array.isArray(payload.history)
+    ? payload.history
+    : (Array.isArray(payload.custom_exercises?.__history) ? payload.custom_exercises.__history : Store._history);
+  Store._saveToIDB();
+  refreshVisibleUI();
+  isApplyingSyncedState = false;
+}
+
+function buildSyncPayload() {
+  return {
+    user_id: USER_ID,
+    exercises: Store._d,
+    custom_exercises: packCustomExercises(),
+    last_reset: Store._lastReset,
+    history: Store._history.slice(-90)
+  };
+}
+
+function broadcastState() {
+  if (isApplyingSyncedState) return;
+  const payload = buildSyncPayload();
+  try {
+    localStorage.setItem('fitness-plan-sync-pulse', JSON.stringify({ ts: Date.now(), payload }));
+  } catch {}
+  try {
+    localSyncChannel?.postMessage(payload);
+  } catch {}
+  try {
+    if (realtimeBroadcastReady) {
+      realtimeChannel?.send({ type: 'broadcast', event: 'state', payload });
+    }
+  } catch (e) {
+    console.warn('Supabase broadcast sync error:', e);
+  }
+}
+
+function setupLocalSync() {
+  if ('BroadcastChannel' in window) {
+    localSyncChannel = new BroadcastChannel('fitness-plan-sync');
+    localSyncChannel.onmessage = event => applySyncedPayload(event.data);
+  }
+  window.addEventListener('storage', event => {
+    if (event.key !== 'fitness-plan-sync-pulse' || !event.newValue) return;
+    try {
+      applySyncedPayload(JSON.parse(event.newValue).payload);
+    } catch {}
+  });
+}
+
+function setupRealtimeSync() {
+  if (!navigator.onLine || !supabaseClient || realtimeChannel) return;
+
+  realtimeChannel = supabaseClient.channel('fitness-plan-sync-87553652', {
+    config: { broadcast: { self: false } }
+  });
+
+  realtimeChannel.on('broadcast', { event: 'state' }, event => {
+    applySyncedPayload(event.payload);
+  });
+  realtimeChannel.on('broadcast', { event: 'state-request' }, () => {
+    if (!realtimeBroadcastReady) return;
+    realtimeChannel.send({ type: 'broadcast', event: 'state', payload: buildSyncPayload() });
+  });
+
+  if (!Store._remoteUnavailable) {
+    realtimeChannel.on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'fitness_data',
+      filter: `user_id=eq.${USER_ID}`
+    }, payload => applySyncedPayload(payload.new));
+  }
+
+  realtimeChannel.subscribe(status => {
+      realtimeBroadcastReady = status === 'SUBSCRIBED';
+      if (realtimeBroadcastReady) {
+        realtimeChannel.send({ type: 'broadcast', event: 'state-request', payload: { user_id: USER_ID, ts: Date.now() } });
+      }
+      if (status === 'CHANNEL_ERROR') console.warn('Supabase realtime channel unavailable.');
+  });
+}
+
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  if (!/^https?:$/.test(location.protocol)) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err => {
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}
+
 /* ===============================================================
    MODAL
    =============================================================== */
@@ -2305,12 +2662,21 @@ function closeModal() {
 
 function saveExercise() {
   const name = document.getElementById('inputName').value.trim();
-  const sets = Math.max(1, parseInt(document.getElementById('inputSets').value) || 4);
-  const reps = Math.max(1, parseInt(document.getElementById('inputReps').value) || 12);
-  const weight = Math.max(0, parseFloat(document.getElementById('inputWeight').value) || 0);
+  const rawSets = parseInt(document.getElementById('inputSets').value);
+  const rawReps = parseInt(document.getElementById('inputReps').value);
+  const rawWeight = parseFloat(document.getElementById('inputWeight').value);
+  const sets = clampNumber(rawSets, 1, MAX_TARGET_SETS, 4);
+  const reps = clampNumber(rawReps, 1, MAX_REPS, 12);
+  const weight = clampNumber(rawWeight, 0, MAX_WEIGHT, 0);
   if (!name) {
     document.getElementById('inputName').focus();
     return;
+  }
+  if (sets !== rawSets || reps !== rawReps || weight !== rawWeight) {
+    document.getElementById('inputSets').value = sets;
+    document.getElementById('inputReps').value = reps;
+    document.getElementById('inputWeight').value = weight;
+    showToast(`已限制为最多 ${MAX_TARGET_SETS} 组`);
   }
 
   const data = Store.load();
@@ -2382,6 +2748,34 @@ function useTemplateFromSettings(name) {
   applyTemplate(name);
 }
 
+function addTemplateFromSettings() {
+  const nameInput = document.getElementById('libraryInputName');
+  const name = nameInput.value.trim();
+  if (!name) {
+    nameInput.focus();
+    return;
+  }
+  const rawSets = parseInt(document.getElementById('libraryInputSets').value);
+  const rawReps = parseInt(document.getElementById('libraryInputReps').value);
+  const rawWeight = parseFloat(document.getElementById('libraryInputWeight').value);
+  const template = {
+    name,
+    sets: clampNumber(rawSets, 1, MAX_TARGET_SETS, 4),
+    reps: clampNumber(rawReps, 1, MAX_REPS, 12),
+    weight: clampNumber(rawWeight, 0, MAX_WEIGHT, 0),
+    technique: ''
+  };
+  Store.upsertTemplate(settingsPart, template);
+  Store.save();
+  renderSettings();
+  if (settingsPart === activeTab) populateTemplateChoices(activeTab);
+  nameInput.value = '';
+  document.getElementById('libraryInputSets').value = template.sets;
+  document.getElementById('libraryInputReps').value = template.reps;
+  document.getElementById('libraryInputWeight').value = template.weight;
+  showToast('已保存动作模板');
+}
+
 /* ===============================================================
    UI: OVERVIEW (inline panel)
    =============================================================== */
@@ -2398,7 +2792,7 @@ function renderOverviewPanel() {
   for (const part of overviewSelectedParts) {
     const exercises = data[part];
     if (!exercises || !exercises.length) {
-      html += `<div class="overview-group" style="--group-color: ${COLORS[part]}">
+      html += `<div class="overview-group" style="--group-color: ${getPartColor(part)}">
         <div class="overview-group-header">
           <div class="overview-group-title">${LABELS[part]}</div>
         </div>
@@ -2407,17 +2801,21 @@ function renderOverviewPanel() {
       continue;
     }
 
-    let groupTotal = 0, groupDone = 0;
+    let groupTotal = 0, groupDone = 0, groupBonus = 0;
     for (const ex of exercises) {
       groupTotal += ex.sets;
-      if (ex.completedSets) groupDone += Math.min(ex.completedSets.filter(Boolean).length, ex.sets);
+      if (ex.completedSets) {
+        const counts = getSetCounts(ex);
+        groupDone += counts.targetDone;
+        groupBonus += counts.bonusDone;
+      }
     }
     const groupPct = groupTotal ? Math.round(groupDone / groupTotal * 100) : 0;
 
-    html += `<div class="overview-group" style="--group-color: ${COLORS[part]}">`;
+    html += `<div class="overview-group" style="--group-color: ${getPartColor(part)}">`;
     html += `<div class="overview-group-header">
       <div class="overview-group-title">${LABELS[part]}</div>
-      <span class="overview-group-progress">${groupDone}/${groupTotal} 组 · ${groupPct}%</span>
+      <span class="overview-group-progress">${groupDone}/${groupTotal} 组${groupBonus ? ` · +${groupBonus}` : ''} · ${groupPct}%</span>
     </div>`;
 
     html += exercises.map((ex, i) => {
@@ -2429,9 +2827,8 @@ function renderOverviewPanel() {
         for (let j = 0; j < Math.min(totalSets, old.length); j++) completedSets[j] = old[j];
         ex.completedSets = completedSets;
       }
-      const done = completedSets.filter(Boolean).length;
-      const progressDone = Math.min(done, ex.sets);
-      const allDone = progressDone === ex.sets;
+      const counts = getSetCounts(ex);
+      const allDone = counts.targetDone === ex.sets;
       const hasTechnique = Boolean((ex.technique || '').trim());
       return `<div class="exercise-card${allDone ? ' all-done' : ''}" data-ov-part="${part}" data-ov-idx="${i}" style="animation-delay:${i * 0.05}s">
         <div class="card-header">
@@ -2448,8 +2845,8 @@ function renderOverviewPanel() {
           }).join('')}
         </div>
         <div class="card-footer">
-          <span class="card-progress">${done}/${ex.sets} 组</span>
-          <span class="card-pct">${ex.sets ? Math.round(progressDone / ex.sets * 100) : 0}%</span>
+          <span class="card-progress">${formatSetProgress(ex)}</span>
+          <span class="card-pct">${counts.pct}%</span>
         </div>
       </div>`;
     }).join('');
@@ -2503,12 +2900,11 @@ function overviewToggleSet(part, exIdx, setIdx) {
     particleBurst(circle);
   }
 
-  const done = ex.completedSets.filter(Boolean).length;
-  const progressDone = Math.min(done, ex.sets);
-  card.querySelector('.card-progress').textContent = `${done}/${ex.sets} 组`;
-  card.querySelector('.card-pct').textContent = `${ex.sets ? Math.round(progressDone / ex.sets * 100) : 0}%`;
+  const counts = getSetCounts(ex);
+  card.querySelector('.card-progress').textContent = formatSetProgress(ex);
+  card.querySelector('.card-pct').textContent = `${counts.pct}%`;
 
-  const allDone = progressDone === ex.sets;
+  const allDone = counts.targetDone === ex.sets;
   card.classList.toggle('all-done', allDone);
 
   if (allDone && !wasComplete) {
@@ -2524,14 +2920,18 @@ function overviewToggleSet(part, exIdx, setIdx) {
   const group = card.closest('.overview-group');
   if (group) {
     const exercises = data[part];
-    let gTotal = 0, gDone = 0;
+    let gTotal = 0, gDone = 0, gBonus = 0;
     for (const e of exercises) {
       gTotal += e.sets;
-      if (e.completedSets) gDone += Math.min(e.completedSets.filter(Boolean).length, e.sets);
+      if (e.completedSets) {
+        const c = getSetCounts(e);
+        gDone += c.targetDone;
+        gBonus += c.bonusDone;
+      }
     }
     const gPct = gTotal ? Math.round(gDone / gTotal * 100) : 0;
     const progEl = group.querySelector('.overview-group-progress');
-    if (progEl) progEl.textContent = `${gDone}/${gTotal} 组 · ${gPct}%`;
+    if (progEl) progEl.textContent = `${gDone}/${gTotal} 组${gBonus ? ` · +${gBonus}` : ''} · ${gPct}%`;
   }
 
   renderExercises(part);
@@ -2583,7 +2983,7 @@ async function initializeApp() {
   try { PARTS.forEach(p => renderExercises(p)); } catch (e) { console.error('Render error:', e); }
   
   // Restore UI state
-  const state = Store._custom?.__ui_state || {};
+  const state = { ...(Store._custom?.__ui_state || {}), ...getSavedUIState() };
   if (state.overviewParts) overviewSelectedParts = state.overviewParts;
   if (state.activeTab && PARTS.includes(state.activeTab)) activeTab = state.activeTab;
   
@@ -2593,10 +2993,17 @@ async function initializeApp() {
     switchMode('split');
     switchTab(activeTab || 'chest');
   }
+  setupRealtimeSync();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('app').style.display = 'block';
+  setupLocalSync();
+  registerServiceWorker();
+  window.addEventListener('online', () => {
+    setupRealtimeSync();
+    Store.scheduleRemoteSync();
+  });
   await initializeApp();
 
   // Bottom nav: mode bar events
@@ -2609,6 +3016,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('chipRow').addEventListener('click', e => {
     const chip = e.target.closest('.chip-item');
     if (chip && chip.dataset.chipPart) onChipClick(chip.dataset.chipPart);
+  });
+
+  document.getElementById('partRail').addEventListener('click', e => {
+    const shortcut = e.target.closest('.part-shortcut');
+    if (shortcut && shortcut.dataset.railPart) onChipClick(shortcut.dataset.railPart);
   });
 
   // Exercise panel events (delegation) — handles both split and overview
@@ -2681,8 +3093,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!confirm(`删除动作记录「${name}」？`)) return;
     Store.removeTemplate(settingsPart, name);
     renderSettings();
+    if (settingsPart === activeTab) populateTemplateChoices(activeTab);
     showToast('已删除动作记录');
   });
+  document.getElementById('btnAddTemplate').addEventListener('click', addTemplateFromSettings);
 
   // Keyboard nav in form
   document.getElementById('inputName').addEventListener('keydown', e => {
