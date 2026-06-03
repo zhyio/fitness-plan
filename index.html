@@ -535,22 +535,23 @@ body {
 }
 .chip-row::-webkit-scrollbar { display: none; }
 .chip-item {
+  flex: 1;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 7px 14px;
+  padding: 8px 0;
   border-radius: 999px;
   border: 1.5px solid rgba(255,255,255,0.08);
   background: rgba(255,255,255,0.03);
   color: var(--text-dim);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.25s ease;
   touch-action: manipulation;
-  flex-shrink: 0;
 }
 .chip-item::before {
   content: '';
@@ -1445,7 +1446,7 @@ let IS_LOCAL_AUTH = false;
 
 const PARTS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
 const ALL_TABS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
-const LABELS = { chest:'胸部', shoulder:'肩部', legs:'腿部', back:'背部', abs:'腹部' };
+const LABELS = { chest:'胸', shoulder:'肩', legs:'腿', back:'背', abs:'腹' };
 const COLORS = { chest:'#ff3366', shoulder:'#ff9933', legs:'#00e676', back:'#6366f1', abs:'#00d7c7', stats:'#e040fb' };
 const GLOWS  = {
   chest:'rgba(255,51,102,0.2)', shoulder:'rgba(255,153,51,0.2)',
