@@ -37,7 +37,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
-  --tab-h: 108px;
+  --tab-h: 70px;
 }
 
 /* ========== RESET ========== */
@@ -491,19 +491,63 @@ body {
   line-height: 1.7;
 }
 
-/* ========== FAB ========== */
-.fab {
+/* Right Action Stack (Vertical Nav + Add Button) */
+.right-action-stack {
   position: fixed;
   bottom: calc(var(--tab-h) + var(--safe-bottom) + 18px);
   right: clamp(16px, 5vw, 24px);
-  width: 56px; height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 60;
+}
+
+/* Vertical Nav (Body Parts) */
+.vertical-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: opacity 0.3s, transform 0.3s;
+}
+.nav-fab {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.25s ease;
+  touch-action: manipulation;
+}
+.nav-fab.active {
+  background: var(--chip-color);
+  border-color: var(--chip-color);
+  color: #fff;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--chip-color) 40%, transparent);
+  transform: scale(1.1);
+}
+.nav-fab:active { transform: scale(0.92); }
+
+/* FAB (Add Button) */
+.fab {
+  width: 52px; height: 52px;
   border-radius: 50%;
   background: var(--accent);
   color: #fff; border: none;
   font-size: 30px; font-weight: 300;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 4px 24px var(--accent-glow);
-  cursor: pointer; z-index: 60;
+  cursor: pointer;
   transition: background 0.3s, transform 0.15s;
   animation: fabIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s backwards,
              neonPulse 3s infinite 1s;
@@ -511,66 +555,6 @@ body {
 }
 .fab:active { transform: scale(0.88); }
 .fab.hidden { display: none; }
-
-/* ========== BOTTOM NAVIGATION ========== */
-.bottom-nav {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  padding-bottom: var(--safe-bottom);
-  padding-left: var(--safe-left);
-  padding-right: var(--safe-right);
-  background: rgba(10, 10, 15, 0.95);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border-top: 1px solid rgba(255,255,255,0.06);
-  z-index: 100;
-}
-
-/* Chip Row */
-.chip-row {
-  display: flex;
-  gap: 8px;
-  padding: 10px clamp(12px, 4vw, 20px) 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.chip-row::-webkit-scrollbar { display: none; }
-.chip-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: 999px;
-  border: 1.5px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
-  color: var(--text-dim);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.25s ease;
-  touch-action: manipulation;
-  flex-shrink: 0;
-}
-.chip-item::before {
-  content: '';
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--chip-color, var(--text-dim));
-  opacity: 0.3;
-  transition: all 0.25s ease;
-}
-.chip-item.active {
-  border-color: var(--chip-color);
-  background: color-mix(in srgb, var(--chip-color) 15%, transparent);
-  color: var(--text-primary);
-}
-.chip-item.active::before {
-  opacity: 1;
-  box-shadow: 0 0 8px var(--chip-color);
-  transform: scale(1.3);
-}
-.chip-item:active { transform: scale(0.95); }
 
 /* Mode Bar */
 .mode-bar {
@@ -1295,12 +1279,14 @@ body {
   <section class="tab-panel" data-part="abs" id="panel-abs"></section>
 </main>
 
-<!-- FAB -->
-<button class="fab" id="fabAdd" aria-label="添加动作">+</button>
+<!-- Right Action Stack -->
+<div class="right-action-stack" id="actionStack">
+  <div class="vertical-nav" id="verticalNav"></div>
+  <button class="fab" id="fabAdd" aria-label="添加动作">+</button>
+</div>
 
 <!-- Bottom Navigation -->
 <nav class="bottom-nav" id="bottomNav">
-  <div class="chip-row" id="chipRow"></div>
   <div class="mode-bar">
     <button class="mode-tab" data-mode="overview" id="modeOverview">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -1445,7 +1431,7 @@ let IS_LOCAL_AUTH = false;
 
 const PARTS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
 const ALL_TABS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
-const LABELS = { chest:'胸部', shoulder:'肩部', legs:'腿部', back:'背部', abs:'腹部' };
+const LABELS = { chest:'胸', shoulder:'肩', legs:'腿', back:'背', abs:'腹' };
 const COLORS = { chest:'#ff3366', shoulder:'#ff9933', legs:'#00e676', back:'#6366f1', abs:'#00d7c7', stats:'#e040fb' };
 const GLOWS  = {
   chest:'rgba(255,51,102,0.2)', shoulder:'rgba(255,153,51,0.2)',
@@ -1861,16 +1847,16 @@ function switchMode(mode) {
 }
 
 function renderChips() {
-  const container = document.getElementById('chipRow');
+  const container = document.getElementById('verticalNav');
   if (currentMode === 'split') {
     container.innerHTML = PARTS.map(part => {
       const active = part === activeTab;
-      return `<button class="chip-item${active ? ' active' : ''}" data-chip-part="${part}" style="--chip-color: ${COLORS[part]}">${LABELS[part]}</button>`;
+      return `<button class="nav-fab${active ? ' active' : ''}" data-nav-part="${part}" style="--chip-color: ${COLORS[part]}">${LABELS[part]}</button>`;
     }).join('');
   } else {
     container.innerHTML = PARTS.map(part => {
       const active = overviewSelectedParts.includes(part);
-      return `<button class="chip-item${active ? ' active' : ''}" data-chip-part="${part}" style="--chip-color: ${COLORS[part]}">${LABELS[part]}</button>`;
+      return `<button class="nav-fab${active ? ' active' : ''}" data-nav-part="${part}" style="--chip-color: ${COLORS[part]}">${LABELS[part]}</button>`;
     }).join('');
   }
 }
@@ -2959,10 +2945,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (tab && tab.dataset.mode) switchMode(tab.dataset.mode);
   });
 
-  // Bottom nav: chip row events
-  document.getElementById('chipRow').addEventListener('click', e => {
-    const chip = e.target.closest('.chip-item');
-    if (chip && chip.dataset.chipPart) onChipClick(chip.dataset.chipPart);
+  // Right vertical nav events
+  document.getElementById('verticalNav').addEventListener('click', e => {
+    const btn = e.target.closest('.nav-fab');
+    if (btn && btn.dataset.navPart) onChipClick(btn.dataset.navPart);
   });
 
   // Exercise panel events (delegation) — handles both split and overview
