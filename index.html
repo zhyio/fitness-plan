@@ -37,7 +37,7 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
-  --tab-h: 70px;
+  --tab-h: 108px;
 }
 
 /* ========== RESET ========== */
@@ -512,70 +512,102 @@ body {
 .fab:active { transform: scale(0.88); }
 .fab.hidden { display: none; }
 
-/* ========== BOTTOM TAB BAR ========== */
-.tab-bar {
+/* ========== BOTTOM NAVIGATION ========== */
+.bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0;
-  height: calc(var(--tab-h) + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
   padding-left: var(--safe-left);
   padding-right: var(--safe-right);
-  display: flex;
-  background: rgba(10, 10, 15, 0.92);
+  background: rgba(10, 10, 15, 0.95);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
-  border-top: 1px solid rgba(255,255,255,0.04);
+  border-top: 1px solid rgba(255,255,255,0.06);
   z-index: 100;
-  position: fixed;
 }
-.tab-item {
-  flex: 1;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 3px;
-  color: var(--text-dim);
-  background: none; border: none;
-  cursor: pointer;
-  transition: color 0.3s;
-  touch-action: manipulation;
-  font-family: inherit;
-  position: relative;
-  padding: 4px 0;
-}
-.tab-item.active {
-  color: var(--accent);
-}
-.tab-icon {
-  width: 28px; height: 28px;
-  overflow: visible;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-              filter 0.3s ease;
-}
-.tab-icon .icon-accent {
-  opacity: 0.08;
-  transition: opacity 0.3s ease, fill 0.3s ease;
-}
-.tab-item.active .tab-icon {
-  transform: translateY(-2px) scale(1.12);
-  filter: drop-shadow(0 0 8px var(--accent-glow));
-}
-.tab-item.active .tab-icon .icon-accent {
-  opacity: 0.22;
-}
-.tab-label { font-size: 11px; font-weight: 500; letter-spacing: 0.3px; }
 
-/* Tab Slide Indicator */
-.tab-indicator {
-  position: absolute;
-  top: 0; left: 0;
-  height: 3px;
-  background: var(--accent);
-  border-radius: 0 0 4px 4px;
-  transition: left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              background 0.4s;
-  box-shadow: 0 4px 14px var(--accent);
-  z-index: 101;
+/* Chip Row */
+.chip-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px clamp(12px, 4vw, 20px) 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.chip-row::-webkit-scrollbar { display: none; }
+.chip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+.chip-item::before {
+  content: '';
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--chip-color, var(--text-dim));
+  opacity: 0.3;
+  transition: all 0.25s ease;
+}
+.chip-item.active {
+  border-color: var(--chip-color);
+  background: color-mix(in srgb, var(--chip-color) 15%, transparent);
+  color: var(--text-primary);
+}
+.chip-item.active::before {
+  opacity: 1;
+  box-shadow: 0 0 8px var(--chip-color);
+  transform: scale(1.3);
+}
+.chip-item:active { transform: scale(0.95); }
+
+/* Mode Bar */
+.mode-bar {
+  display: flex;
+  gap: 6px;
+  padding: 4px clamp(12px, 4vw, 20px) 8px;
+}
+.mode-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  touch-action: manipulation;
+}
+.mode-tab svg {
+  width: 18px; height: 18px;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+.mode-tab.active {
+  border-color: var(--accent);
+  background: var(--accent-glow);
+  color: var(--text-primary);
+}
+.mode-tab.active svg { opacity: 1; }
+.mode-tab:active { transform: scale(0.97); }
 
 /* ========== MODAL ========== */
 .modal-overlay {
@@ -938,54 +970,7 @@ body {
   padding: 20px 0;
 }
 
-/* ========== OVERVIEW MODAL ========== */
-.overview-sheet {
-  min-height: min(80dvh, 700px);
-}
-.overview-part-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-.overview-part-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 999px;
-  border: 1.5px solid rgba(255,255,255,0.1);
-  background: rgba(255,255,255,0.04);
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  touch-action: manipulation;
-}
-.overview-part-chip::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--chip-color, var(--text-dim));
-  opacity: 0.4;
-  transition: opacity 0.25s, box-shadow 0.25s, transform 0.25s;
-}
-.overview-part-chip.selected {
-  border-color: var(--chip-color);
-  background: color-mix(in srgb, var(--chip-color) 15%, transparent);
-  color: var(--text-primary);
-}
-.overview-part-chip.selected::before {
-  opacity: 1;
-  box-shadow: 0 0 8px var(--chip-color);
-  transform: scale(1.2);
-}
-.overview-part-chip:active {
-  transform: scale(0.95);
-}
+/* ========== OVERVIEW INLINE ========== */
 
 .overview-content {
   display: flex;
@@ -1081,12 +1066,6 @@ body {
     min-height: 32px;
     padding: 0 11px;
     font-size: 12px;
-  }
-  .tab-icon {
-    width: 30px; height: 30px;
-  }
-  .tab-label {
-    font-size: 11.5px;
   }
   .btn-delete {
     font-size: 24px;
@@ -1294,14 +1273,7 @@ body {
           <line x1="9" y1="21" x2="9" y2="9"/>
         </svg>
       </button>
-      <button class="settings-trigger" id="btnOverview" aria-label="今日总览">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-          <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-          <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-          <rect x="14" y="14" width="7" height="7" rx="1.5"/>
-        </svg>
-      </button>
+
       <button class="settings-trigger" id="btnSettings" aria-label="动作设置">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 8.4a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2Z"/>
@@ -1315,6 +1287,7 @@ body {
 
 <!-- Tab Panels -->
 <main class="tab-panels">
+  <section class="tab-panel" id="panel-overview"></section>
   <section class="tab-panel active" data-part="chest" id="panel-chest"></section>
   <section class="tab-panel" data-part="shoulder" id="panel-shoulder"></section>
   <section class="tab-panel" data-part="legs" id="panel-legs"></section>
@@ -1325,67 +1298,19 @@ body {
 <!-- FAB -->
 <button class="fab" id="fabAdd" aria-label="添加动作">+</button>
 
-<!-- Tab Bar -->
-<nav class="tab-bar" id="tabBar">
-  <div class="tab-indicator" id="tabIndicator"></div>
-  <!-- Chest: Dumbbell -->
-  <button class="tab-item active" data-tab="chest" id="tab-chest">
-    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <path class="icon-accent" fill="currentColor" stroke="none" d="M3 9a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Zm13 0a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2V9Z"/>
-      <rect x="3" y="7" width="5" height="10" rx="2"/>
-      <rect x="16" y="7" width="5" height="10" rx="2"/>
-      <path d="M8 12h8"/>
-    </svg>
-    <span class="tab-label">胸部</span>
-  </button>
-  <!-- Shoulder: Lateral Raise Figure -->
-  <button class="tab-item" data-tab="shoulder" id="tab-shoulder">
-    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <path class="icon-accent" fill="currentColor" stroke="none" d="M9.5 12.5a2.5 2.5 0 0 1 5 0v7h-5v-7Z"/>
-      <circle cx="12" cy="5.5" r="2.5"/>
-      <path d="M9.5 12.5a2.5 2.5 0 0 1 5 0v7h-5v-7Z"/>
-      <path d="M9.5 12.5L4.5 9.5"/>
-      <path d="M14.5 12.5l5-3"/>
-      <circle cx="4" cy="9" r="1" fill="currentColor" stroke="none" opacity="0.5"/>
-      <circle cx="20" cy="9" r="1" fill="currentColor" stroke="none" opacity="0.5"/>
-    </svg>
-    <span class="tab-label">肩部</span>
-  </button>
-  <!-- Legs: Strong Legs -->
-  <button class="tab-item" data-tab="legs" id="tab-legs">
-    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <path class="icon-accent" fill="currentColor" stroke="none" d="M7.5 2.5h9a1 1 0 0 1 1 1V7h-11V3.5a1 1 0 0 1 1-1Z"/>
-      <rect x="7.5" y="2.5" width="9" height="4.5" rx="1"/>
-      <path d="M9.5 7v5.5c-.5 1.2-1 2-1.2 3.5v3.5a1.5 1.5 0 0 0 1.5 1.5h.7"/>
-      <path d="M14.5 7v5.5c.5 1.2 1 2 1.2 3.5v3.5a1.5 1.5 0 0 1-1.5 1.5h-.7"/>
-      <path d="M12 2.5v4.5"/>
-    </svg>
-    <span class="tab-label">腿部</span>
-  </button>
-  <!-- Back: Pull-up Figure -->
-  <button class="tab-item" data-tab="back" id="tab-back">
-    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <path class="icon-accent" fill="currentColor" stroke="none" d="M9.5 10h5v9.5a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V10Z"/>
-      <path d="M4 3h16"/>
-      <circle cx="12" cy="6.5" r="2"/>
-      <path d="M4 3l5.5 7"/>
-      <path d="M20 3l-5.5 7"/>
-      <path d="M9.5 10h5v9.5a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V10Z"/>
-    </svg>
-    <span class="tab-label">背部</span>
-  </button>
-  <!-- Abs: Six-pack Torso -->
-  <button class="tab-item" data-tab="abs" id="tab-abs">
-    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-      <path class="icon-accent" fill="currentColor" stroke="none" d="M8 5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5v13a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-13Z"/>
-      <rect x="8" y="3" width="8" height="17.5" rx="2.5"/>
-      <path d="M12 3.5v16.5"/>
-      <path d="M8.5 8h7"/>
-      <path d="M8.5 12.5h7"/>
-      <path d="M8.5 17h7"/>
-    </svg>
-    <span class="tab-label">腹部</span>
-  </button>
+<!-- Bottom Navigation -->
+<nav class="bottom-nav" id="bottomNav">
+  <div class="chip-row" id="chipRow"></div>
+  <div class="mode-bar">
+    <button class="mode-tab" data-mode="overview" id="modeOverview">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      总览
+    </button>
+    <button class="mode-tab active" data-mode="split" id="modeSplit">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="1.5" fill="currentColor"/><circle cx="14" cy="12" r="1.5" fill="currentColor"/><circle cx="10" cy="18" r="1.5" fill="currentColor"/></svg>
+      分化
+    </button>
+  </div>
 </nav>
 
 <!-- Modal -->
@@ -1498,20 +1423,6 @@ body {
     </div>
     
     <div id="dayDetailsContainer"></div>
-  </div>
-</div>
-
-<!-- Overview Modal -->
-<div class="modal-overlay" id="overviewModal">
-  <div class="modal-sheet overview-sheet">
-    <div class="modal-handle"></div>
-    <div class="settings-top">
-      <h2 class="modal-title">今日总览</h2>
-      <button class="sheet-close" id="btnCloseOverview" aria-label="关闭总览">&times;</button>
-    </div>
-    <p class="settings-copy">选择今天要练的部位，统一管理打卡进度</p>
-    <div class="overview-part-selector" id="overviewPartSelector"></div>
-    <div class="overview-content" id="overviewContent"></div>
   </div>
 </div>
 
@@ -1916,11 +1827,13 @@ function checkReset() {
 }
 
 /* ===============================================================
-   UI: ACCENT & TAB
+   UI: MODE & NAVIGATION
    =============================================================== */
-let activeTab = 'chest';
+let currentMode = 'split'; // 'overview' or 'split'
+let activeTab = 'chest';   // active part in split mode
 let settingsPart = 'chest';
 let editingTechnique = null;
+let overviewSelectedParts = [];
 
 function setAccent(part) {
   const s = document.documentElement.style;
@@ -1928,38 +1841,105 @@ function setAccent(part) {
   s.setProperty('--accent-glow', GLOWS[part]);
 }
 
-function moveTabIndicator(tabId) {
-  const tabEl = document.getElementById('tab-' + tabId);
-  const bar = document.getElementById('tabBar');
-  const indicator = document.getElementById('tabIndicator');
-  if (!tabEl || !bar || !indicator) return;
-  const barRect = bar.getBoundingClientRect();
-  const tabRect = tabEl.getBoundingClientRect();
-  indicator.style.left = (tabRect.left - barRect.left + tabRect.width * 0.25) + 'px';
-  indicator.style.width = (tabRect.width * 0.5) + 'px';
-  indicator.style.background = COLORS[tabId] || COLORS.history;
-  indicator.style.boxShadow = '0 4px 14px ' + (GLOWS[tabId] || GLOWS.history);
+function switchMode(mode) {
+  currentMode = mode;
+  document.getElementById('modeOverview').classList.toggle('active', mode === 'overview');
+  document.getElementById('modeSplit').classList.toggle('active', mode === 'split');
+  renderChips();
+
+  if (mode === 'overview') {
+    // Restore saved selection
+    try {
+      const saved = JSON.parse(localStorage.getItem('fitness-overview-parts') || '[]');
+      overviewSelectedParts = saved.filter(p => PARTS.includes(p));
+    } catch { overviewSelectedParts = []; }
+    setAccent('chest');
+    showOverviewPanel();
+  } else {
+    showSplitPanel(activeTab);
+  }
 }
 
-function switchTab(part) {
+function renderChips() {
+  const container = document.getElementById('chipRow');
+  if (currentMode === 'split') {
+    container.innerHTML = PARTS.map(part => {
+      const active = part === activeTab;
+      return `<button class="chip-item${active ? ' active' : ''}" data-chip-part="${part}" style="--chip-color: ${COLORS[part]}">${LABELS[part]}</button>`;
+    }).join('');
+  } else {
+    container.innerHTML = PARTS.map(part => {
+      const active = overviewSelectedParts.includes(part);
+      return `<button class="chip-item${active ? ' active' : ''}" data-chip-part="${part}" style="--chip-color: ${COLORS[part]}">${LABELS[part]}</button>`;
+    }).join('');
+  }
+}
+
+function onChipClick(part) {
+  if (currentMode === 'split') {
+    activeTab = part;
+    showSplitPanel(part);
+    renderChips();
+  } else {
+    const idx = overviewSelectedParts.indexOf(part);
+    if (idx >= 0) overviewSelectedParts.splice(idx, 1);
+    else overviewSelectedParts.push(part);
+    localStorage.setItem('fitness-overview-parts', JSON.stringify(overviewSelectedParts));
+    renderChips();
+    renderOverviewPanel();
+  }
+}
+
+function showSplitPanel(part) {
   activeTab = part;
   setAccent(part);
 
-  document.querySelectorAll('.tab-item').forEach(el =>
-    el.classList.toggle('active', el.dataset.tab === part)
-  );
-  document.querySelectorAll('.tab-panel').forEach(el =>
-    el.classList.toggle('active', el.dataset.part === part)
-  );
+  document.querySelectorAll('.tab-panel').forEach(el => {
+    el.classList.toggle('active', el.dataset.part === part);
+  });
+  document.getElementById('panel-overview').classList.remove('active');
 
   document.getElementById('headerTitle').textContent = LABELS[part];
-  moveTabIndicator(part);
-
-  // FAB visibility
-  const fab = document.getElementById('fabAdd');
-  fab.classList.remove('hidden');
-
+  document.getElementById('fabAdd').classList.remove('hidden');
   updateProgress(part);
+}
+
+function showOverviewPanel() {
+  document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+  document.getElementById('panel-overview').classList.add('active');
+  document.getElementById('headerTitle').textContent = '今日总览';
+  document.getElementById('fabAdd').classList.add('hidden');
+  renderOverviewPanel();
+  updateOverviewProgress();
+}
+
+function updateOverviewProgress() {
+  const data = Store.load();
+  let total = 0, done = 0;
+  for (const part of overviewSelectedParts) {
+    const exs = data[part];
+    if (!exs) continue;
+    for (const ex of exs) {
+      total += ex.sets;
+      if (ex.completedSets) done += Math.min(ex.completedSets.filter(Boolean).length, ex.sets);
+    }
+  }
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const fill = document.getElementById('progressFill');
+  const text = document.getElementById('progressText');
+  fill.style.width = pct + '%';
+  const newText = total ? `${done}/${total} 组 · ${pct}%` : '选择部位开始训练';
+  if (text.textContent !== newText) text.textContent = newText;
+}
+
+// Keep old switchTab for initialization compatibility
+function switchTab(part) {
+  currentMode = 'split';
+  activeTab = part;
+  document.getElementById('modeOverview').classList.remove('active');
+  document.getElementById('modeSplit').classList.add('active');
+  renderChips();
+  showSplitPanel(part);
 }
 
 /* ===============================================================
@@ -2136,8 +2116,8 @@ function saveTechnique() {
   closeTechniqueEditor();
   renderExercises(part);
   updateProgress(part);
-  // Also refresh overview if open
-  if (document.getElementById('overviewModal').classList.contains('open')) renderOverviewContent();
+  // Also refresh overview if active
+  if (currentMode === 'overview') renderOverviewPanel();
   showToast(ex.technique ? '已保存动作要领' : '已清空动作要领');
 }
 
@@ -2522,53 +2502,17 @@ function useTemplateFromSettings(name) {
 }
 
 /* ===============================================================
-   UI: OVERVIEW
+   UI: OVERVIEW (inline panel)
    =============================================================== */
-let overviewSelectedParts = [];
-
-function openOverview() {
-  // Restore from localStorage or default empty
-  try {
-    const saved = JSON.parse(localStorage.getItem('fitness-overview-parts') || '[]');
-    overviewSelectedParts = saved.filter(p => PARTS.includes(p));
-  } catch { overviewSelectedParts = []; }
-  renderOverviewSelector();
-  renderOverviewContent();
-  document.getElementById('overviewModal').classList.add('open');
-}
-
-function closeOverview() {
-  document.getElementById('overviewModal').classList.remove('open');
-  // Restore accent to active tab
-  setAccent(activeTab);
-}
-
-function renderOverviewSelector() {
-  const container = document.getElementById('overviewPartSelector');
-  container.innerHTML = PARTS.map(part => {
-    const selected = overviewSelectedParts.includes(part);
-    return `<button class="overview-part-chip${selected ? ' selected' : ''}" data-overview-part="${part}" style="--chip-color: ${COLORS[part]}">${LABELS[part]}</button>`;
-  }).join('');
-}
-
-function toggleOverviewPart(part) {
-  const idx = overviewSelectedParts.indexOf(part);
-  if (idx >= 0) overviewSelectedParts.splice(idx, 1);
-  else overviewSelectedParts.push(part);
-  localStorage.setItem('fitness-overview-parts', JSON.stringify(overviewSelectedParts));
-  renderOverviewSelector();
-  renderOverviewContent();
-}
-
-function renderOverviewContent() {
-  const container = document.getElementById('overviewContent');
+function renderOverviewPanel() {
+  const container = document.getElementById('panel-overview');
   if (!overviewSelectedParts.length) {
-    container.innerHTML = '<div class="overview-empty">👆 选择今天要练的部位<br>训练计划会在下方显示</div>';
+    container.innerHTML = '<div class="overview-empty">👆 在下方选择今天要练的部位<br>训练计划会在这里显示</div>';
     return;
   }
 
   const data = Store.load();
-  let html = '';
+  let html = '<div class="overview-content">';
 
   for (const part of overviewSelectedParts) {
     const exercises = data[part];
@@ -2577,12 +2521,11 @@ function renderOverviewContent() {
         <div class="overview-group-header">
           <div class="overview-group-title">${LABELS[part]}</div>
         </div>
-        <div class="overview-empty" style="padding: 24px 0;">还没有训练动作，去「${LABELS[part]}」页添加</div>
+        <div class="overview-empty" style="padding: 24px 0;">还没有训练动作，切到「分化」模式添加</div>
       </div>`;
       continue;
     }
 
-    // Calculate group progress
     let groupTotal = 0, groupDone = 0;
     for (const ex of exercises) {
       groupTotal += ex.sets;
@@ -2633,6 +2576,7 @@ function renderOverviewContent() {
     html += '</div>';
   }
 
+  html += '</div>';
   container.innerHTML = html;
 }
 
@@ -2661,16 +2605,14 @@ function overviewToggleSet(part, exIdx, setIdx) {
   ex.completedSets[targetIdx] = !ex.completedSets[targetIdx];
   Store.save();
 
-  // Find the card in overview modal
-  const card = document.querySelector(`#overviewContent .exercise-card[data-ov-part="${part}"][data-ov-idx="${exIdx}"]`);
-  if (!card) { renderOverviewContent(); return; }
+  const card = document.querySelector(`#panel-overview .exercise-card[data-ov-part="${part}"][data-ov-idx="${exIdx}"]`);
+  if (!card) { renderOverviewPanel(); return; }
 
   const circle = card.querySelectorAll('.set-circle')[targetIdx];
   const justDone = ex.completedSets[targetIdx];
   circle.classList.toggle('done', justDone);
   circle.textContent = justDone ? '✓' : (targetIdx + 1);
 
-  // Pop animation
   circle.style.animation = 'none';
   void circle.offsetHeight;
   circle.style.animation = 'pop 0.35s cubic-bezier(0.34,1.56,0.64,1)';
@@ -2680,7 +2622,6 @@ function overviewToggleSet(part, exIdx, setIdx) {
     particleBurst(circle);
   }
 
-  // Update card footer
   const done = ex.completedSets.filter(Boolean).length;
   const progressDone = Math.min(done, ex.sets);
   card.querySelector('.card-progress').textContent = `${done}/${ex.sets} 组`;
@@ -2698,7 +2639,7 @@ function overviewToggleSet(part, exIdx, setIdx) {
     showToast('🎉 全部完成！太强了！');
   }
 
-  // Update group header progress
+  // Update group progress
   const group = card.closest('.overview-group');
   if (group) {
     const exercises = data[part];
@@ -2712,9 +2653,8 @@ function overviewToggleSet(part, exIdx, setIdx) {
     if (progEl) progEl.textContent = `${gDone}/${gTotal} 组 · ${gPct}%`;
   }
 
-  // Also sync the main tab panels
   renderExercises(part);
-  updateProgress(activeTab);
+  updateOverviewProgress();
 }
 
 function overviewOpenTechnique(part, idx) {
@@ -3013,26 +2953,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('authScreen').style.display = 'flex';
   });
 
-  // Tab bar events
-  document.getElementById('tabBar').addEventListener('click', e => {
-    const tab = e.target.closest('.tab-item');
-    if (tab) switchTab(tab.dataset.tab);
+  // Bottom nav: mode bar events
+  document.querySelector('.mode-bar').addEventListener('click', e => {
+    const tab = e.target.closest('.mode-tab');
+    if (tab && tab.dataset.mode) switchMode(tab.dataset.mode);
   });
 
-  // Exercise panel events (delegation)
+  // Bottom nav: chip row events
+  document.getElementById('chipRow').addEventListener('click', e => {
+    const chip = e.target.closest('.chip-item');
+    if (chip && chip.dataset.chipPart) onChipClick(chip.dataset.chipPart);
+  });
+
+  // Exercise panel events (delegation) — handles both split and overview
   document.querySelector('.tab-panels').addEventListener('click', e => {
     const t = e.target.closest('[data-action]');
     if (!t) return;
     if (t.dataset.action === 'toggle') toggleSet(+t.dataset.ex, +t.dataset.set);
     else if (t.dataset.action === 'delete') deleteExercise(+t.dataset.idx);
     else if (t.dataset.action === 'technique') openTechniqueEditor(+t.dataset.idx);
+    else if (t.dataset.action === 'ov-toggle') overviewToggleSet(t.dataset.ovPart, +t.dataset.ovEx, +t.dataset.ovSet);
+    else if (t.dataset.action === 'ov-technique') overviewOpenTechnique(t.dataset.ovPart, +t.dataset.ovIdx);
   });
 
   // FAB
   document.getElementById('fabAdd').addEventListener('click', openModal);
   document.getElementById('btnSettings').addEventListener('click', openSettings);
   document.getElementById('btnStats').addEventListener('click', openStats);
-  document.getElementById('btnOverview').addEventListener('click', openOverview);
 
   // Stats Modal
   document.getElementById('btnCloseStats').addEventListener('click', closeStats);
@@ -3098,28 +3045,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('inputWeight').addEventListener('keydown', e => {
     if (e.key === 'Enter') saveExercise();
   });
-
-  // Overview modal events
-  document.getElementById('btnCloseOverview').addEventListener('click', closeOverview);
-  document.getElementById('overviewModal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) closeOverview();
-  });
-  document.getElementById('overviewPartSelector').addEventListener('click', e => {
-    const chip = e.target.closest('[data-overview-part]');
-    if (chip) toggleOverviewPart(chip.dataset.overviewPart);
-  });
-  document.getElementById('overviewContent').addEventListener('click', e => {
-    const t = e.target.closest('[data-action]');
-    if (!t) return;
-    if (t.dataset.action === 'ov-toggle') {
-      overviewToggleSet(t.dataset.ovPart, +t.dataset.ovEx, +t.dataset.ovSet);
-    } else if (t.dataset.action === 'ov-technique') {
-      overviewOpenTechnique(t.dataset.ovPart, +t.dataset.ovIdx);
-    }
-  });
-
-  // Recalculate tab indicator on resize
-  window.addEventListener('resize', () => moveTabIndicator(activeTab));
 });
 </script>
 </body>
