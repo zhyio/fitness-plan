@@ -71,7 +71,7 @@ async function ensureSupabaseClient() {
 const PARTS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
 const ALL_TABS = ['chest', 'shoulder', 'legs', 'back', 'abs'];
 const LABELS = { chest:'胸', shoulder:'肩', legs:'腿', back:'背', abs:'腹' };
-const COLOR_FALLBACKS = { chest:'#ff3366', shoulder:'#ff9933', legs:'#00e676', back:'#2979ff', abs:'#00d7c7', stats:'#e040fb' };
+const COLOR_FALLBACKS = { chest:'#16a34a', shoulder:'#65a30d', legs:'#10b981', back:'#059669', abs:'#0d9488', stats:'#22c55e' };
 const COLOR_VARS = {
   chest:'--accent-chest',
   shoulder:'--accent-shoulder',
@@ -1168,7 +1168,7 @@ function launchConfetti(x, y) {
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d');
 
-  const colors = ['#ff3366','#ff9933','#00e676','#2979ff','#ffeb3b','#e040fb','#fff'];
+  const colors = ['#16a34a','#22c55e','#10b981','#86efac','#bbf7d0','#ffffff'];
   const particles = [];
   for (let i = 0; i < 60; i++) {
     particles.push({
