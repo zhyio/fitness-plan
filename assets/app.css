@@ -215,6 +215,64 @@ body {
   align-items: center;
   gap: 10px;
 }
+.sync-status {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 24px;
+  margin: -2px 0 9px;
+  padding: 5px 10px;
+  border: 1px solid rgba(21, 128, 61, 0.10);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(21, 128, 61, 0.06);
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #94a3b8;
+  box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.10);
+  flex: 0 0 auto;
+}
+.sync-status[data-state="synced"] {
+  color: #047857;
+  border-color: rgba(22, 163, 74, 0.16);
+  background: rgba(240, 253, 244, 0.72);
+}
+.sync-status[data-state="synced"] .sync-dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+}
+.sync-status[data-state="syncing"],
+.sync-status[data-state="pending"] {
+  color: #4d7c0f;
+  border-color: rgba(101, 163, 13, 0.18);
+  background: rgba(247, 254, 231, 0.70);
+}
+.sync-status[data-state="syncing"] .sync-dot,
+.sync-status[data-state="pending"] .sync-dot {
+  background: #84cc16;
+  box-shadow: 0 0 0 4px rgba(132, 204, 22, 0.14);
+}
+.sync-status[data-state="error"],
+.sync-status[data-state="offline"] {
+  color: #0f766e;
+  border-color: rgba(13, 148, 136, 0.18);
+  background: rgba(240, 253, 250, 0.70);
+}
+.sync-status[data-state="error"] .sync-dot,
+.sync-status[data-state="offline"] .sync-dot {
+  background: #14b8a6;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.13);
+}
 .settings-trigger {
   width: 40px;
   height: 40px;

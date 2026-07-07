@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'fitness-plan-';
-const CACHE_NAME = `${CACHE_PREFIX}v20260707-icon-toast`;
+const CACHE_NAME = `${CACHE_PREFIX}v20260707-sync-status`;
 const SUPABASE_SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.6/dist/umd/supabase.min.js';
 
 const APP_SHELL = [

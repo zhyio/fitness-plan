@@ -194,6 +194,38 @@ function setSavedUIState(state) {
   }
 }
 
+function normalizeTimestamp(value) {
+  const ts = Date.parse(value || '');
+  return Number.isFinite(ts) ? new Date(ts).toISOString() : '';
+}
+
+function timestampMs(value) {
+  const ts = Date.parse(value || '');
+  return Number.isFinite(ts) ? ts : 0;
+}
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function formatSyncTime(value) {
+  const ts = timestampMs(value);
+  if (!ts) return '';
+  return new Date(ts).toLocaleTimeString('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+}
+
+function updateSyncIndicator(state, text) {
+  const el = document.getElementById('syncStatus');
+  const label = document.getElementById('syncStatusText');
+  if (!el || !label) return;
+  el.dataset.state = state;
+  label.textContent = text;
+}
+
 function clampNumber(value, min, max, fallback) {
   const n = Number(value);
   if (!Number.isFinite(n)) return fallback;
@@ -368,9 +400,14 @@ const Store = {
   _authMeta: null,
   _remoteId: null,
   _remoteTimer: null,
+  _remoteRetryTimer: null,
   _remoteLoadPromise: null,
   _remoteUnavailable: false,
   _localChangedAt: 0,
+  _updatedAt: '',
+  _lastSyncedAt: '',
+  _pendingSync: false,
+  _syncError: '',
 
   async init() {
     // IndexedDB is the startup source of truth; Supabase is an enhancement.
@@ -384,12 +421,15 @@ const Store = {
         let count = PARTS.reduce((sum, part) => sum + (Array.isArray(custom[part]) ? custom[part].length : 0), 0);
         if (count < 15) {
           this._custom = mergeTemplates(custom);
-          this._saveToIDB();
         } else {
           this._custom = normalizeTemplates(custom);
         }
 
         this._lastReset = cached.last_reset || '';
+        this._updatedAt = normalizeTimestamp(cached.updated_at || cached.updatedAt);
+        this._lastSyncedAt = normalizeTimestamp(cached.last_synced_at || cached.lastSyncedAt);
+        this._pendingSync = Boolean(cached.pending_sync || cached.pendingSync);
+        this._syncError = String(cached.sync_error || cached.syncError || '');
       }
       this._history = normalizeHistory(Array.isArray(cached?.history)
         ? cached.history
@@ -398,6 +438,8 @@ const Store = {
       console.warn('IDB read error:', e);
     }
 
+    this.updateSyncStatus();
+
     this._remoteLoadPromise = this._loadRemote().then(loaded => {
       if (!loaded) return;
       refreshVisibleUI();
@@ -405,10 +447,68 @@ const Store = {
     });
   },
 
+  _markLocalChange() {
+    this._localChangedAt = Date.now();
+    this._updatedAt = nowIso();
+    this._pendingSync = true;
+    this._syncError = '';
+    this.updateSyncStatus();
+  },
+
+  _localWins(remoteUpdatedAt) {
+    if (this._pendingSync) return true;
+    const localTs = timestampMs(this._updatedAt);
+    const remoteTs = timestampMs(remoteUpdatedAt);
+    return Boolean(localTs && (!remoteTs || localTs > remoteTs));
+  },
+
+  async _applyRemoteData(data) {
+    this._remoteUnavailable = false;
+    this._remoteId = data.id || this._remoteId;
+    this._d = normalizeWorkoutPlan(data.exercises || {});
+    this._lastReset = data.last_reset || this._lastReset;
+    this._history = normalizeHistory(Array.isArray(data.history)
+      ? data.history
+      : (Array.isArray(data.custom_exercises?.__history) ? data.custom_exercises.__history : this._history));
+
+    this._authMeta = data.custom_exercises?.__auth || null;
+    const remoteCustom = data.custom_exercises || {};
+    const count = PARTS.reduce((sum, part) => sum + (Array.isArray(remoteCustom[part]) ? remoteCustom[part].length : 0), 0);
+    this._custom = count < 15 ? mergeTemplates(remoteCustom) : normalizeTemplates(remoteCustom);
+    this._updatedAt = normalizeTimestamp(data.updated_at) || this._updatedAt;
+    this._lastSyncedAt = nowIso();
+    this._pendingSync = false;
+    this._syncError = '';
+    await this._saveToIDB();
+    this.updateSyncStatus();
+  },
+
+  updateSyncStatus() {
+    if (this._pendingSync) {
+      if (!navigator.onLine) {
+        updateSyncIndicator('offline', '离线，本地已保存');
+      } else if (this._syncError) {
+        updateSyncIndicator('error', '待同步');
+      } else {
+        updateSyncIndicator('pending', '待同步');
+      }
+      return;
+    }
+
+    if (this._lastSyncedAt) {
+      updateSyncIndicator('synced', `已同步 ${formatSyncTime(this._lastSyncedAt)}`);
+    } else if (!navigator.onLine || this._remoteUnavailable) {
+      updateSyncIndicator('offline', '本地模式');
+    } else {
+      updateSyncIndicator('local', '本地已保存');
+    }
+  },
+
   async _loadRemote() {
     const startedAt = Date.now();
     try {
       if (!navigator.onLine) throw new Error('Browser offline');
+      updateSyncIndicator('syncing', '同步中');
       const client = await ensureSupabaseClient();
       if (!client) throw new Error('No supabase client');
       const { data, error } = await withTimeout(client
@@ -423,31 +523,21 @@ const Store = {
       if (data) {
         this._remoteUnavailable = false;
         this._remoteId = data.id || null;
-        if (this._localChangedAt > startedAt) {
+        const remoteUpdatedAt = normalizeTimestamp(data.updated_at);
+        if (this._localChangedAt > startedAt || this._localWins(remoteUpdatedAt)) {
           this.scheduleRemoteSync();
+          this.updateSyncStatus();
           return true;
         }
-        this._d = normalizeWorkoutPlan(data.exercises || {});
-        this._lastReset = data.last_reset || this._lastReset;
-        this._history = normalizeHistory(Array.isArray(data.history)
-          ? data.history
-          : (Array.isArray(data.custom_exercises?.__history) ? data.custom_exercises.__history : this._history));
-
-        this._authMeta = data.custom_exercises?.__auth || null;
-        let remoteCustom = data.custom_exercises || {};
-        let count = PARTS.reduce((sum, part) => sum + (Array.isArray(remoteCustom[part]) ? remoteCustom[part].length : 0), 0);
-        if (count < 15) {
-          this._custom = mergeTemplates(remoteCustom);
-          this.save();
-        } else {
-          this._custom = normalizeTemplates(remoteCustom);
-          await this._saveToIDB();
-        }
+        await this._applyRemoteData(data);
         return true;
       } else {
-        this._remoteUnavailable = true;
-        console.warn(`Supabase row for ${USER_ID} was not found; using local/PWA storage until the backend row is created.`);
-        return false;
+        this._remoteUnavailable = false;
+        this._remoteId = null;
+        if (!this._updatedAt) this._updatedAt = nowIso();
+        this._pendingSync = true;
+        this.scheduleRemoteSync();
+        return true;
       }
     } catch (e) {
       this._remoteUnavailable = true;
@@ -455,6 +545,7 @@ const Store = {
       if (e.message !== 'Browser offline') {
         console.warn('Supabase load error (offline mode):', e);
       }
+      this.updateSyncStatus();
       return false;
     }
   },
@@ -462,6 +553,7 @@ const Store = {
   async reconnectRemote() {
     if (!navigator.onLine) return;
     this._remoteUnavailable = false;
+    this.updateSyncStatus();
     await this._loadRemote();
     refreshVisibleUI();
     this.scheduleRemoteSync();
@@ -476,12 +568,16 @@ const Store = {
       custom_exercises: this._custom,
       auth_meta: this._authMeta,
       last_reset: this._lastReset,
-      history: normalizeHistory(this._history)
+      history: normalizeHistory(this._history),
+      updated_at: this._updatedAt,
+      last_synced_at: this._lastSyncedAt,
+      pending_sync: this._pendingSync,
+      sync_error: this._syncError
     });
   },
 
   save() {
-    this._localChangedAt = Date.now();
+    this._markLocalChange();
     // 写入 IndexedDB（同步保障）
     this._saveToIDB();
 
@@ -490,31 +586,72 @@ const Store = {
     broadcastState();
   },
 
-  scheduleRemoteSync() {
-    if (!navigator.onLine || !supabaseClient || this._remoteUnavailable || !this._remoteId) return;
+  scheduleRemoteSync(delay = 350) {
+    if (!navigator.onLine) {
+      this.updateSyncStatus();
+      return;
+    }
     clearTimeout(this._remoteTimer);
-    this._remoteTimer = setTimeout(() => this._syncRemoteNow(), 350);
+    this._remoteTimer = setTimeout(() => this._syncRemoteNow(), delay);
   },
 
   async _syncRemoteNow() {
-    if (!navigator.onLine || !supabaseClient || this._remoteUnavailable || !this._remoteId) return;
+    if (!navigator.onLine) {
+      this.updateSyncStatus();
+      return;
+    }
+    const client = supabaseClient || await ensureSupabaseClient();
+    if (!client) {
+      this._remoteUnavailable = true;
+      this._pendingSync = true;
+      this._syncError = 'Supabase client unavailable';
+      this._saveToIDB();
+      this.updateSyncStatus();
+      clearTimeout(this._remoteRetryTimer);
+      this._remoteRetryTimer = setTimeout(() => {
+        this._remoteUnavailable = false;
+        this._syncRemoteNow();
+      }, 10000);
+      return;
+    }
+    updateSyncIndicator('syncing', '同步中');
     const payload = {
       user_id: USER_ID,
       exercises: normalizeWorkoutPlan(this._d),
       custom_exercises: packCustomExercises(),
+      history: normalizeHistory(this._history),
       last_reset: this._lastReset,
-      updated_at: new Date().toISOString()
+      updated_at: this._updatedAt || nowIso()
     };
 
     try {
-      const { error } = await withTimeout(supabaseClient
+      const { data, error } = await withTimeout(client
         .from('fitness_data')
-        .update(payload)
-        .eq('id', this._remoteId), SUPABASE_QUERY_TIMEOUT_MS, 'Supabase sync timed out');
+        .upsert(payload, { onConflict: 'user_id' })
+        .select('id,updated_at')
+        .maybeSingle(), SUPABASE_QUERY_TIMEOUT_MS, 'Supabase sync timed out');
       if (error) throw error;
+      this._remoteUnavailable = false;
+      this._remoteId = data?.id || this._remoteId;
+      this._updatedAt = normalizeTimestamp(data?.updated_at) || payload.updated_at;
+      this._lastSyncedAt = nowIso();
+      this._pendingSync = false;
+      this._syncError = '';
+      await this._saveToIDB();
+      this.updateSyncStatus();
+      setupRealtimeSync();
     } catch (error) {
       this._remoteUnavailable = true;
+      this._pendingSync = true;
+      this._syncError = error?.message || 'sync failed';
       teardownRealtimeSync();
+      this._saveToIDB();
+      this.updateSyncStatus();
+      clearTimeout(this._remoteRetryTimer);
+      this._remoteRetryTimer = setTimeout(() => {
+        this._remoteUnavailable = false;
+        this._syncRemoteNow();
+      }, 10000);
       console.warn('Supabase sync error:', error);
     }
   },
@@ -550,11 +687,11 @@ const Store = {
   getHistory() { return this._history; },
 
   async addHistoryEntry(entry) {
+    this._markLocalChange();
     this._history = normalizeHistory([...this._history, entry]);
+    await this._saveToIDB();
     await IDBCache.addHistory(entry);
-    if (supabaseClient) {
-      this.scheduleRemoteSync();
-    }
+    this.scheduleRemoteSync();
     broadcastState();
   }
 };
@@ -1244,6 +1381,8 @@ function refreshVisibleUI() {
 
 function applySyncedPayload(payload) {
   if (!payload || payload.user_id !== USER_ID) return;
+  const incomingUpdatedAt = normalizeTimestamp(payload.updated_at);
+  if (Store._pendingSync && timestampMs(Store._updatedAt) > timestampMs(incomingUpdatedAt)) return;
   isApplyingSyncedState = true;
   Store._d = normalizeWorkoutPlan(payload.exercises || {});
   Store._custom = mergeTemplates(payload.custom_exercises || {});
@@ -1251,7 +1390,13 @@ function applySyncedPayload(payload) {
   Store._history = normalizeHistory(Array.isArray(payload.history)
     ? payload.history
     : (Array.isArray(payload.custom_exercises?.__history) ? payload.custom_exercises.__history : Store._history));
+  Store._updatedAt = incomingUpdatedAt || Store._updatedAt;
+  Store._pendingSync = Boolean(payload.pending_sync);
+  Store._lastSyncedAt = Store._pendingSync ? Store._lastSyncedAt : nowIso();
+  Store._syncError = '';
   Store._saveToIDB();
+  Store.updateSyncStatus();
+  if (Store._pendingSync) Store.scheduleRemoteSync();
   refreshVisibleUI();
   isApplyingSyncedState = false;
 }
@@ -1262,7 +1407,9 @@ function buildSyncPayload() {
     exercises: normalizeWorkoutPlan(Store._d),
     custom_exercises: packCustomExercises(),
     last_reset: Store._lastReset,
-    history: normalizeHistory(Store._history)
+    history: normalizeHistory(Store._history),
+    updated_at: Store._updatedAt,
+    pending_sync: Store._pendingSync
   };
 }
 
@@ -1693,6 +1840,10 @@ function resetLocalState() {
   Store._lastReset = '';
   Store._history = [];
   Store._authMeta = null;
+  Store._updatedAt = '';
+  Store._lastSyncedAt = '';
+  Store._pendingSync = false;
+  Store._syncError = '';
 }
 
 async function initializeApp() {
@@ -1733,6 +1884,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   registerServiceWorker();
   window.addEventListener('online', () => {
     Store.reconnectRemote();
+  });
+  window.addEventListener('offline', () => {
+    Store.updateSyncStatus();
   });
   await initializeApp();
 
