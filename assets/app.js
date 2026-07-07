@@ -403,7 +403,6 @@ const Store = {
   _remoteRetryTimer: null,
   _remoteLoadPromise: null,
   _remoteUnavailable: false,
-  _localChangedAt: 0,
   _updatedAt: '',
   _lastSyncedAt: '',
   _pendingSync: false,
@@ -448,18 +447,10 @@ const Store = {
   },
 
   _markLocalChange() {
-    this._localChangedAt = Date.now();
     this._updatedAt = nowIso();
     this._pendingSync = true;
     this._syncError = '';
     this.updateSyncStatus();
-  },
-
-  _localWins(remoteUpdatedAt) {
-    if (this._pendingSync) return true;
-    const localTs = timestampMs(this._updatedAt);
-    const remoteTs = timestampMs(remoteUpdatedAt);
-    return Boolean(localTs && (!remoteTs || localTs > remoteTs));
   },
 
   async _applyRemoteData(data) {
@@ -505,7 +496,6 @@ const Store = {
   },
 
   async _loadRemote() {
-    const startedAt = Date.now();
     try {
       if (!navigator.onLine) throw new Error('Browser offline');
       updateSyncIndicator('syncing', '同步中');
@@ -523,12 +513,6 @@ const Store = {
       if (data) {
         this._remoteUnavailable = false;
         this._remoteId = data.id || null;
-        const remoteUpdatedAt = normalizeTimestamp(data.updated_at);
-        if (this._localChangedAt > startedAt || this._localWins(remoteUpdatedAt)) {
-          this.scheduleRemoteSync();
-          this.updateSyncStatus();
-          return true;
-        }
         await this._applyRemoteData(data);
         return true;
       } else {
@@ -1382,7 +1366,6 @@ function refreshVisibleUI() {
 function applySyncedPayload(payload) {
   if (!payload || payload.user_id !== USER_ID) return;
   const incomingUpdatedAt = normalizeTimestamp(payload.updated_at);
-  if (Store._pendingSync && timestampMs(Store._updatedAt) > timestampMs(incomingUpdatedAt)) return;
   isApplyingSyncedState = true;
   Store._d = normalizeWorkoutPlan(payload.exercises || {});
   Store._custom = mergeTemplates(payload.custom_exercises || {});
