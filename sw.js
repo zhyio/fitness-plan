@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'fitness-plan-';
-const CACHE_NAME = `${CACHE_PREFIX}v20260707`;
+const CACHE_NAME = `${CACHE_PREFIX}v20260707-illustration`;
 const SUPABASE_SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.6/dist/umd/supabase.min.js';
 
 const APP_SHELL = [
@@ -11,7 +11,7 @@ const APP_SHELL = [
   './assets/icons/favicon-32.png',
   './assets/icons/apple-touch-icon.png',
   './assets/icons/app-icon-512.png',
-  './assets/illustrations/empty-workout-illustration.webp',
+  './assets/illustrations/empty-workout-calendar.png',
   SUPABASE_SDK_URL
 ];
 

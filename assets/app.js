@@ -796,7 +796,7 @@ function renderExercises(part) {
   if (!exercises || !exercises.length) {
     panel.innerHTML = `
       <div class="empty-state">
-        <img class="empty-illustration" src="assets/illustrations/empty-workout-illustration.webp" width="292" height="320" alt="" draggable="false">
+        <img class="empty-illustration" src="assets/illustrations/empty-workout-calendar.png" width="560" height="560" alt="" draggable="false">
         <p>还没有训练动作<br>点击 <strong>+</strong> 添加</p>
       </div>`;
     return;
