@@ -1428,7 +1428,7 @@ function saveExercise() {
   closeModal();
   renderExercises(activeTab);
   updateProgress(activeTab);
-  showToast('✅ 已添加');
+  showToast('已添加动作');
 }
 
 /* ===============================================================

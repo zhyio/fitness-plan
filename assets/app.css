@@ -1217,22 +1217,24 @@ body {
   bottom: calc(var(--tab-h) + var(--safe-bottom) + 80px);
   left: 50%;
   transform: translateX(-50%) translateY(20px);
-  background: rgba(30, 30, 45, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.08);
-  color: var(--text-primary);
-  padding: 12px 24px;
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(22, 163, 74, 0.18);
+  color: #047857;
+  padding: 11px 18px;
+  border-radius: 999px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   z-index: 300;
   opacity: 0;
-  transition: opacity 0.3s, transform 0.3s;
+  box-shadow: 0 12px 30px rgba(21, 128, 61, 0.14);
+  transition: opacity 0.3s, transform 0.3s, box-shadow 0.3s;
   pointer-events: none;
   white-space: nowrap;
 }
 .toast.show {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+  box-shadow: 0 16px 36px rgba(21, 128, 61, 0.18);
 }
